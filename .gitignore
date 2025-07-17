@@ -1,3 +1,7 @@
+# Main folders
 .venv
 dist
 build
+
+# Personal folder
+public/*

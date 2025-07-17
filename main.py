@@ -1,6 +1,7 @@
-import sys, os, json
+import sys, os, json, shutil
 from PyQt6.QtWidgets import (QApplication, QMainWindow,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton,
+                             QFileDialog,
                              QLabel, QLineEdit)
 from PyQt6.QtGui import QIcon, QFont, QPixmap
 from PyQt6.QtCore import Qt
@@ -12,20 +13,54 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon('pic.png'))
         self.setGeometry(0, 0, 300, 75)
 
+        # self.script_path = os.path.abspath(__file__)
+        # self.script_folder = os.path.dirname(self.script_path)
+        self.public_folder = os.path.abspath('public')
+
         self.initUI()
 
     def initUI(self):
         self.counter = 0
-        self.label = QLabel(f'Text: {self.counter}', self)
-        self.label.move(10, 0)
+
+        self.label = QLabel(f'Clicks: {self.counter}', self)
+        self.label.move(150, 0)
+
         button = QPushButton('Push me!', self)
         button.setGeometry(0, 0, 70, 20)
-        button.move(60, 5)
+        button.move(75, 5)
         button.clicked.connect(self.incCounter)
+
+        pic_label = QLabel(self)
+        pic_label.setGeometry(0, 0, 75, 75)
+        pixmap = QPixmap('pic.png')
+        pic_label.setPixmap(pixmap)
+        pic_label.setScaledContents(True)
+
+        file_button = QPushButton('Select files:', self)
+        file_button.setGeometry(0, 0, 80, 20)
+        file_button.move(75, 30)
+
+        self.file_label = QLabel('not saved', self)
+        self.file_label.setFont(QFont('monospace'))
+        self.file_label.setStyleSheet('color: red;')
+        self.file_label.setGeometry(0, 0, 135, 20)
+        self.file_label.move(160, 30)
+
+        file_button.clicked.connect(self.chooseFiles)
+
 
     def incCounter(self):
         self.counter += 1
-        self.label.setText(f'Text: {self.counter}')
+        self.label.setText(f'Clicks: {self.counter}')
+
+    def chooseFiles(self):
+        dialog, _ = QFileDialog.getOpenFileNames(self, 'Open files')
+
+        for file in dialog:
+            shutil.move(file, self.public_folder)
+
+        self.file_label.setText('success')
+        self.file_label.setStyleSheet('color: green;')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
