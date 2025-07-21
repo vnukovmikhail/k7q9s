@@ -1,66 +1,60 @@
-import sys, os, json, shutil
-from PyQt6.QtWidgets import (QApplication, QMainWindow,
+import sys, os, json, shutil, time, asyncio, random
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton,
-                             QFileDialog,
+                             QFileDialog, QMessageBox,
+                             QVBoxLayout, QHBoxLayout, QGridLayout,
                              QLabel, QLineEdit)
 from PyQt6.QtGui import QIcon, QFont, QPixmap
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
+
+""""""
+
+PUBLIC_DIR = 'public'
+
+if not os.path.exists(PUBLIC_DIR):
+    os.mkdir(PUBLIC_DIR)
+print(f'Folder: {PUBLIC_DIR} was successfully initialized')
+
+PUBLIC_DIR_PATH = os.path.abspath(PUBLIC_DIR)
+print(f'Folder was created on path: {PUBLIC_DIR_PATH}')
+
+HOME_DIR_PATH = os.path.expanduser('~')
+
+""""""
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Not my first application')
         self.setWindowIcon(QIcon('pic.png'))
-        self.setGeometry(0, 0, 300, 75)
+        self.setGeometry(0, 0, 300, 125)
+        self.setFont(QFont('monospace'))
 
-        # self.script_path = os.path.abspath(__file__)
-        # self.script_folder = os.path.dirname(self.script_path)
-        self.public_folder = os.path.abspath('public')
+        """ label = QLineEdit(self)
+        input = QLineEdit(self)
 
-        self.initUI()
+        layout = QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(input)
 
-    def initUI(self):
-        self.counter = 0
+        container = QWidget()
+        container.setLayout(layout)
 
-        self.label = QLabel(f'Clicks: {self.counter}', self)
-        self.label.move(150, 0)
+        self.setCentralWidget(container) """
 
-        button = QPushButton('Push me!', self)
-        button.setGeometry(0, 0, 70, 20)
-        button.move(75, 5)
-        button.clicked.connect(self.incCounter)
+        """ input1 = QLineEdit(self)
+        input2 = QLineEdit(self)
+        input3 = QLineEdit(self)
 
-        pic_label = QLabel(self)
-        pic_label.setGeometry(0, 0, 75, 75)
-        pixmap = QPixmap('pic.png')
-        pic_label.setPixmap(pixmap)
-        pic_label.setScaledContents(True)
+        layout = QHBoxLayout()
+        layout.addWidget(input1)
+        layout.addWidget(input2)
+        layout.addWidget(input3)
 
-        file_button = QPushButton('Select files:', self)
-        file_button.setGeometry(0, 0, 80, 20)
-        file_button.move(75, 30)
+        container = QWidget()
+        container.setLayout(layout)
 
-        self.file_label = QLabel('not saved', self)
-        self.file_label.setFont(QFont('monospace'))
-        self.file_label.setStyleSheet('color: red;')
-        self.file_label.setGeometry(0, 0, 135, 20)
-        self.file_label.move(160, 30)
-
-        file_button.clicked.connect(self.chooseFiles)
-
-
-    def incCounter(self):
-        self.counter += 1
-        self.label.setText(f'Clicks: {self.counter}')
-
-    def chooseFiles(self):
-        dialog, _ = QFileDialog.getOpenFileNames(self, 'Open files')
-
-        for file in dialog:
-            shutil.move(file, self.public_folder)
-
-        self.file_label.setText('success')
-        self.file_label.setStyleSheet('color: green;')
+        self.setCentralWidget(container) """
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -70,262 +64,77 @@ if __name__ == '__main__':
 
 
 
+        # self.initLowerUI()
+        # self.initUpperUI()
 
+        # self.entry = QLineEdit(self)
+        # self.file_dialog = []
+        # self.initUI()
 
-""" import sys, os, json
-from PyQt5.QtWidgets import (QApplication, QMainWindow,
-                             QLabel, QLineEdit,
-                             QCheckBox, QRadioButton, QButtonGroup, QPushButton,
-                             QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QFileDialog)
-from PyQt5.QtGui import QIcon, QFont, QPixmap
-from PyQt5.QtCore import Qt
+    # def initUpperUI(self):
+    #     container = QWidget()
+    #     layout = QVBoxLayout()
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-        self.setFont(QFont('monospace', 11))
+    #     # layout.addStretch()
+    #     button3 = QPushButton('Create collection')
+    #     # button3.clicked.connect(self.createCollection)
+    #     button3.clicked.connect(lambda:print('btn3'))
+    #     layout.addWidget(button3)
 
+    #     container.setLayout(layout)
+    #     self.setMenuWidget(container)
 
-        self.button = QPushButton('Browse files', self)
+    # def initLowerUI(self):
+    #     container = QWidget()
+    #     layout = QVBoxLayout()
 
-        self.initUI()
+    #     layout.addStretch() # stick to lower
+    #     button2 = QPushButton('Create collection')
+    #     # button2.clicked.connect(self.createCollection)
+    #     button2.clicked.connect(lambda:print('btn2'))
+    #     layout.addWidget(button2)
 
-    def initUI(self):
-        self.button.clicked.connect(self.browse_files)
-        self.button.setGeometry(0, 0, 300, 30)
+    #     container.setLayout(layout)
+    #     self.setCentralWidget(container)
 
-    def browse_files(self):
-        file_dialog = QFileDialog.getOpenFileNames(self, 'Open file')
-        print(file_dialog[0])
+    # def initUI(self):
+    #     pic_label = QLabel(self)
+    #     pic_label.setGeometry(0, 0, 50, 50)
+    #     pic_label.setScaledContents(True)
+    #     pixmap = QPixmap('pic.png')
+    #     pic_label.setPixmap(pixmap)
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
- """
-""" import sys, os, json
-from PyQt5.QtWidgets import (QApplication, QMainWindow,
-                             QLabel, QLineEdit,
-                             QCheckBox, QRadioButton, QButtonGroup, QPushButton,
-                             QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                             QFileDialog)
-from PyQt5.QtGui import QIcon, QFont, QPixmap
-from PyQt5.QtCore import Qt
+    #     label = QLabel('title:', self)
+    #     label.move(55, 0)
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-        self.setFont(QFont('monospace', 11))
+    #     self.entry.setGeometry(105, 5, 100, 20)
 
-        self.file_dialog = QFileDialog(self)
+    #     button = QPushButton('Select files', self)
+    #     button.setGeometry(105, 0, 150, 20)
+    #     button.move(55, 30)
+    #     button.clicked.connect(self.chooseFiles)
 
-        self.initUI()
+    # def chooseFiles(self):
+    #     self.file_dialog, _ = QFileDialog.getOpenFileNames(self, 'Choose files', HOME_DIR_PATH, 'png')
 
-    def initUI(self):
-        pass
+    # def createCollection(self):
+    #     title = self.entry.text()
+    #     files = self.file_dialog
+    #     print(title, files)
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
- """
-""" class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-        self.setFont(QFont('monospace', 11))
-
-        self.line_edit = QLineEdit(self)
-        self.button = QPushButton('submit', self)
-
-        self.initUI()
-
-    def initUI(self):
-        self.line_edit.setGeometry(5, 5, 150, 25)
-        self.line_edit.setPlaceholderText('Enter your name')
-        self.button.setGeometry(160, 5, 75, 25)
-
-        self.button.clicked.connect(self.submit)
-
-    def submit(self):
-        text = self.line_edit.text()
-        print(f'Hello, {text}')
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_()) """
-
-""" 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-
-        self.radio1 = QRadioButton('kiki', self)
-        self.radio2 = QRadioButton('rita', self)
-        self.radio3 = QRadioButton('jack', self)
-        self.radio4 = QRadioButton('male', self)
-        self.radio5 = QRadioButton('female', self)
-
-        self.button_group1 = QButtonGroup(self)
-        self.button_group2 = QButtonGroup(self)
-
-        self.initUI()
-
-    def initUI(self):
-        self.radio1.setGeometry(5, 5, 300, 20)
-        self.radio2.setGeometry(5, 25, 300, 20)
-        self.radio3.setGeometry(5, 45, 300, 20)
-        self.setStyleSheet('QRadioButton{'
-                           'font-family: monospace;'
-                           '}')
-        self.radio4.setGeometry(85, 5, 300, 20)
-        self.radio5.setGeometry(85, 25, 300, 20)
-
-        self.button_group1.addButton(self.radio1)
-        self.button_group1.addButton(self.radio2)
-        self.button_group1.addButton(self.radio3)
-        self.button_group2.addButton(self.radio4)
-        self.button_group2.addButton(self.radio5)
-
-        self.radio1.toggled.connect(self.radio_button_changed)
-        self.radio2.toggled.connect(self.radio_button_changed)
-        self.radio3.toggled.connect(self.radio_button_changed)
-        self.radio4.toggled.connect(self.radio_button_changed)
-        self.radio5.toggled.connect(self.radio_button_changed)
-
-    def radio_button_changed(self):
-        radio_button = self.sender()
-        if radio_button.isChecked():
-            print(f'{radio_button.text()} is selected')
-        else:
-            print(f'{radio_button.text()} is unselected')
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
-"""
-
-""" class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-
-        self.checkbox = QCheckBox('will you be mine?', self)
-        self.initUI()
-
-    def initUI(self):
-        self.checkbox.setGeometry(5, 0, self.width(), 30)
-        self.checkbox.setFont(QFont('monospace', 11))
-        self.checkbox.setStyleSheet('font-weight: bold;')
-        self.checkbox.setChecked(True)
-        self.checkbox.stateChanged.connect(self.checkbox_changed)
-
-    def checkbox_changed(self, state):
-        if state == Qt.Checked:
-            print('you are mine', state)
-        else:
-            print('why not?', state)
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_()) """
-
-""" class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('My first GUI')
-        self.setGeometry(0, 0, 300, 350)
-        self.setWindowIcon(QIcon('pic.png'))
-
-        label = QLabel('Hello', self)
-        label.setFont(QFont('monospace', 11))
-        label.setStyleSheet('color: #F0F0F0;' 'font-weight: bold;' 'text-decoration: underline;' 'background-color: #1B1116;')
-
-        label.setGeometry(0, 0, 300, 30)
-        # label.setAlignment(Qt.AlignTop)
-        label.setAlignment(Qt.AlignHCenter | Qt.AlignBottom)
-
-
-        pic_label = QLabel(self)
-        pic_label.setGeometry(0, 0, 150, 150)
-
-        pixmap = QPixmap('pic.png')
-        pic_label.setPixmap(pixmap)
-        pic_label.setScaledContents(True)
-
-        pic_label.setGeometry((self.width() - pic_label.width()) // 2,
-                              (self.height() - pic_label.height()) // 6,
-                              pic_label.width(),
-                              pic_label.height())
-        # pic_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter) 
-
-        self.initUI()
+    #     if not title:
+    #         print('No title')
+    #         return
         
-    def initUI(self):
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+    #     try:
+    #         os.mkdir(f'{PUBLIC_DIR_PATH}/{title}')
+    #         path = os.path.abspath(f'{PUBLIC_DIR_PATH}/{title}')
 
-        label1 = QLabel('#1', self)
-        label2 = QLabel('#2', self)
-        label3 = QLabel('#3', self)
-        label4 = QLabel('#4', self)
-        label5 = QLabel('#5', self)
+    #         for file in files:
+    #             shutil.move(file, path)
+    #     except Exception as e:
+    #         print(e)
+    #         return
 
-        label1.setStyleSheet('background-color: red;')
-        label2.setStyleSheet('background-color: yello;')
-        label3.setStyleSheet('background-color: pink;')
-        label4.setStyleSheet('background-color: brown;')
-        label5.setStyleSheet('background-color: blue;')
 
-        vbox = QGridLayout()
-        vbox.addWidget(label1, 0, 0)
-        vbox.addWidget(label2, 0, 1)
-        vbox.addWidget(label3, 0, 2)
-        vbox.addWidget(label4, 1, 0)
-        vbox.addWidget(label5, 1, 1)
 
-        central_widget.setLayout(vbox)
-
-        self.button = QPushButton('Click me!', self)
-        self.button.setGeometry(0, 0, 150, 75)
-        self.button.setGeometry((self.width() - self.button.width()) // 2, 15, 150, 35)
-        self.button.setStyleSheet('font-size: 15px;' 'font-family: monospace;' 'font-weight: bold;')
-        # button.setFont(QFont('monospace', 30))
-        self.button.clicked.connect(self.on_click)
-
-    def on_click(self):
-        print('button clicked')
-        self.button.setText('Clicked')
-        self.button.setDisabled(True)
-        
-        
-def main():
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main() """
