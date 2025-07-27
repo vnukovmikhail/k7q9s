@@ -6,4 +6,11 @@ def Initialize():
         os.mkdir('public')
     else:
         print('already exists')
+
+def CreateCollection(name = 'default'):
+    try:
+        os.mkdir(f'public/{name}')
+    except FileExistsError:
+        print('already exists')
     
+CreateCollection('ho')

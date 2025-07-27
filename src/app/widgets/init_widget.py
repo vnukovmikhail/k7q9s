@@ -1,4 +1,4 @@
-import sys, os, json, shutil, time, asyncio, random
+import sys, os, json, shutil, time, asyncio, random, pathlib
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton, QTableWidget,
                              QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
@@ -53,22 +53,40 @@ class InitWidget(QWidget):
 
         labels = {}
         lineEdits = {}
+        buttons = {}
 
         labels['Title'] = QLabel('Title')
         labels['Title'].setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
         lineEdits['Title'] = QLineEdit()
+
+        labels['Tags'] = QLabel('Tags:')
 
         combo = MultiComboBox()
         combo.addItems(['element_1', 'element_2', 'element_3', 'element_4', 'element_5'])
         combo.lineEdit().setText('')
 
-        button = QPushButton('Init Collection')
+        buttons['Select'] = QPushButton('Select file(s)')
+        buttons['Select'].clicked.connect(self.selectFiles)
+
+        buttons['Init'] = QPushButton('Init Collection')
         textEdit = QTextEdit()
 
         layout.addWidget(labels['Title'],       0, 0, 1, 1)
         layout.addWidget(lineEdits['Title'],    0, 1, 1, 2)
 
-        layout.addWidget(combo,                 1, 0, 1, 3)
+        layout.addWidget(labels['Tags'],        1, 0, 1, 1)
+        layout.addWidget(combo,                 1, 1, 1, 2)
 
-        layout.addWidget(button,                2, 0, 1, 3)
-        layout.addWidget(textEdit,              3, 0, 1, 3)
+        layout.addWidget(buttons['Select'],     2, 0, 1, 3)
+
+        layout.addWidget(buttons['Init'],       3, 0, 1, 3)
+        layout.addWidget(textEdit,              4, 0, 1, 3)
+
+    def selectFiles(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            parent = self,
+            caption = 'Select file(s)',
+            directory = os.path.expanduser('~'),
+        )
+        print(files)

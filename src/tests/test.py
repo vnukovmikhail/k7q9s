@@ -1,3 +1,38 @@
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt6.QtCore import QTimer
+import sys
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Resize Delay Example")
+        self.resize(400, 300)
+
+        self.label = QLabel("Resize the window", self)
+        self.setCentralWidget(self.label)
+
+        self.resize_timer = QTimer(self)
+        self.resize_timer.setInterval(300)  # 300 мс после последнего resize
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.on_resize_done)
+
+    def resizeEvent(self, event):
+        # Сбрасываем и перезапускаем таймер
+        self.resize_timer.start()
+        return super().resizeEvent(event)
+
+    def on_resize_done(self):
+        size = self.size()
+        print(f"Resize finished: {size.width()} x {size.height()}")
+        self.label.setText(f"Window: {size.width()} x {size.height()}")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
+
+
 """ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
