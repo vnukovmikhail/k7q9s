@@ -8,8 +8,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandardItemModel
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
-from src.app.widgets.custom_widget import CustomWidget
-from src.app.widgets.init_widget import InitWidget
+from src.app.widgets.fetch_widget import FetchWidget
+from src.app.widgets.create_widget import InitWidget
 from src.app.widgets.another_widget import AnotherWidget
 
 class MenuWidget(QWidget):
@@ -24,7 +24,7 @@ class MenuWidget(QWidget):
         buttons['button_2'] = QPushButton('button_2')
         buttons['button_3'] = QPushButton('button_3')
 
-        buttons['button_1'].clicked.connect(lambda:parent.setCentralWidget(CustomWidget()))
+        buttons['button_1'].clicked.connect(lambda:parent.setCentralWidget(FetchWidget()))
         buttons['button_2'].clicked.connect(lambda:parent.setCentralWidget(InitWidget()))
         buttons['button_3'].clicked.connect(lambda:parent.setCentralWidget(AnotherWidget()))
 

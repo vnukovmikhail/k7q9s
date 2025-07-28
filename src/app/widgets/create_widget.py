@@ -8,6 +8,9 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandardItemModel
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
+from src.utils.str_util import validate_data, text_to_arr
+from src.utils.fs_util import create_collection
+
 class MultiComboBox(QComboBox):
     def __init__(self):
         super().__init__()
@@ -44,49 +47,82 @@ class MultiComboBox(QComboBox):
 
         self.model().appendRow(item)
 
-
 class InitWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.data = {
+            'title': None,
+            'tags': None,
+            'files': None,
+        }
+
         layout = QGridLayout(self)
 
         labels = {}
-        lineEdits = {}
+        self.lineEdits = {}
         buttons = {}
 
         labels['Title'] = QLabel('Title')
         labels['Title'].setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-
-        lineEdits['Title'] = QLineEdit()
+        self.lineEdits['Title'] = QLineEdit()
 
         labels['Tags'] = QLabel('Tags:')
-
-        combo = MultiComboBox()
-        combo.addItems(['element_1', 'element_2', 'element_3', 'element_4', 'element_5'])
-        combo.lineEdit().setText('')
+        self.combo = MultiComboBox()
+        self.combo.addItems(['element_1', 'element_2', 'element_3', 'element_4', 'element_5'])
+        self.combo.lineEdit().setText('')
 
         buttons['Select'] = QPushButton('Select file(s)')
-        buttons['Select'].clicked.connect(self.selectFiles)
+        buttons['Select'].clicked.connect(self.select_files)
 
         buttons['Init'] = QPushButton('Init Collection')
-        textEdit = QTextEdit()
+        buttons['Init'].clicked.connect(self.approve_creation)
+        self.textEdit = QTextEdit()
+        self.textEdit.setReadOnly(True)
 
-        layout.addWidget(labels['Title'],       0, 0, 1, 1)
-        layout.addWidget(lineEdits['Title'],    0, 1, 1, 2)
+        layout.addWidget(labels['Title'],         0, 0, 1, 1)
+        layout.addWidget(self.lineEdits['Title'], 0, 1, 1, 2)
 
-        layout.addWidget(labels['Tags'],        1, 0, 1, 1)
-        layout.addWidget(combo,                 1, 1, 1, 2)
+        layout.addWidget(labels['Tags'],          1, 0, 1, 1)
+        layout.addWidget(self.combo,              1, 1, 1, 2)
 
-        layout.addWidget(buttons['Select'],     2, 0, 1, 3)
+        layout.addWidget(buttons['Select'],       2, 0, 1, 3)
 
-        layout.addWidget(buttons['Init'],       3, 0, 1, 3)
-        layout.addWidget(textEdit,              4, 0, 1, 3)
+        layout.addWidget(buttons['Init'],         3, 0, 1, 3)
+        layout.addWidget(self.textEdit,           4, 0, 1, 3)
 
-    def selectFiles(self):
+    def select_files(self):
         files, _ = QFileDialog.getOpenFileNames(
             parent = self,
             caption = 'Select file(s)',
             directory = os.path.expanduser('~'),
         )
-        print(files)
+        self.data['files'] = files
+
+    def approve_creation(self):
+        self.data['title'] = self.lineEdits['Title'].text()
+        self.data['tags'] = text_to_arr(self.combo.lineEdit().text(), ', ')
+
+        print(self.data)
+
+        title = 'Error'
+        message = 'Validation error:'
+        details = validate_data(self.data)
+        
+        if details[1]:
+            info = create_collection(self.data['title'], self.data['tags'], self.data['files'])
+            self.textEdit.setText(self.textEdit.toPlainText() + f'✅ Created on path: {info['folder_path']}\n')
+        else:
+            self.show_error_dialog(title, message, details[0])
+
+    def show_error_dialog(self, title, message, details):
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Critical)
+
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setDetailedText(details)
+
+        msg.setStandardButtons(QMessageBox.StandardButton.Cancel)
+        msg.exec()
+        
