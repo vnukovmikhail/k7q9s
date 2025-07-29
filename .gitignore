@@ -5,3 +5,4 @@ content
 __pycache__/
 public
 config.ini
+MyApp.spec

@@ -1,4 +1,5 @@
-from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QUrl
+from PyQt6.QtCore import QSettings
+import os, sys
 
 CONFIG_FILE = 'config.ini'
 
@@ -14,3 +15,9 @@ class config:
         return self.settings.value(value)
     
 config()
+
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
+
+print(resource_path('src/resources/pic.png'))
