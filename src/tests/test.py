@@ -1,3 +1,26 @@
+ """ def resize_image1(self, width=500):
+    height = (self.pixmap.height() * width) // self.pixmap.width()
+    scaled_pixmap = self.pixmap.scaled(
+        width,
+        height,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation
+    )
+    self.pic_label.setPixmap(scaled_pixmap)
+
+def resize_to_fit_label(self, label: QLabel) -> QPixmap:
+    if self.pixmap.isNull():
+        return QPixmap()
+    scaled_pixmap = self.pixmap.scaled(
+        label.width(),
+        label.height(),
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation
+    )
+    self.pic_label.setPixmap(scaled_pixmap) """
+
+
+
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel
 from PyQt6.QtCore import QTimer
 import sys

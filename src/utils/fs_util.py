@@ -1,15 +1,11 @@
 import sys, os, json, shutil, time, asyncio, random, datetime
-
 from typing import Optional, List, Dict
 
 BASE_DIR = 'public'
 
 def initialize_base_dir():
-    if not os.path.isdir('public'):
-        print('creating root')
-        os.mkdir('public')
-    else:
-        print('already exists')
+    if not os.path.isdir(BASE_DIR):
+        os.mkdir(BASE_DIR)
 
 def create_collection(
     title: str,
@@ -72,13 +68,13 @@ def read_collection(
     }
 
 def fetch_collections():
+    initialize_base_dir()
+
     collections = []
     folder_names = os.listdir(BASE_DIR)
 
     for folder_name in folder_names:
         collections.append(read_collection(folder_name))
 
-    for collection in collections:
-        print(collection)
-
     return collections
+    

@@ -1,12 +1,5 @@
-import sys, os, json, shutil, time, asyncio, random
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
-                             QCheckBox, QRadioButton, QButtonGroup, QPushButton,
-                             QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
-                             QFileDialog, QMessageBox, QComboBox, QMenu, QListWidget, QDialog,
-                             QVBoxLayout, QHBoxLayout, QGridLayout, QLayoutItem,
-                             QLabel, QLineEdit, QTextEdit)
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction
-from PyQt6.QtCore import Qt, QSize, QSettings, QTimer
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtCore import Qt
 
 class AnotherWidget(QWidget):
     def __init__(self):
@@ -21,8 +14,10 @@ class AnotherWidget(QWidget):
         labels['Hello world'].setText('Hello World')
         labels['who are you?'] = QLabel()
         labels['who are you?'].setText('who are you?')
-        labels['lets go'] = QLabel()
-        labels['lets go'].setText('lets go')
+        labels['404'] = QLabel()
+        labels['404'].setText('error: 404')
+        labels['error'] = QLabel()
+        labels['error'].setText('out of use')
 
         for _, item in labels.items():
             item.setAlignment(Qt.AlignmentFlag.AlignHCenter)

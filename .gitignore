@@ -1,9 +1,7 @@
-# Main folders
 .venv
 dist
 build
 content
 __pycache__/
-
-# Personal folder
 public
+config.ini

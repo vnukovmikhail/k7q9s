@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 from src.app.widgets.fetch_widget import FetchWidget
 from src.app.widgets.create_widget import InitWidget
 from src.app.widgets.another_widget import AnotherWidget
+from src.app.widgets.config_widget import ConfigWidget
 
 class MenuWidget(QWidget):
     def __init__(self, parent=None):
@@ -23,10 +24,12 @@ class MenuWidget(QWidget):
         buttons['button_1'] = QPushButton('button_1')
         buttons['button_2'] = QPushButton('button_2')
         buttons['button_3'] = QPushButton('button_3')
+        buttons['button_4'] = QPushButton('button_4')
 
         buttons['button_1'].clicked.connect(lambda:parent.setCentralWidget(FetchWidget()))
         buttons['button_2'].clicked.connect(lambda:parent.setCentralWidget(InitWidget()))
-        buttons['button_3'].clicked.connect(lambda:parent.setCentralWidget(AnotherWidget()))
+        buttons['button_3'].clicked.connect(lambda:parent.setCentralWidget(ConfigWidget()))
+        buttons['button_4'].clicked.connect(lambda:parent.setCentralWidget(AnotherWidget()))
 
         for _, item in buttons.items():
             layout.addWidget(item)

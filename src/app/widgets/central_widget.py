@@ -17,10 +17,10 @@ class CentralWidget(QWidget):
 
         labels = {}
 
-        labels['title'] = QLabel('"Not my first application"')
-        labels['title'].setFont(QFont('monospace', 11))
-        labels['author'] = QLabel('Author: Mihail')
-        labels['version'] = QLabel('Version: v1.0.0')
+        labels['title'] = QLabel('title: Not my first application')
+        labels['description'] = QLabel('description: Organizer for files')
+        labels['author'] = QLabel('author: Mihail Vnukov')
+        labels['version'] = QLabel('version: x.x.xx-dev')
 
         for _, item in labels.items():
             item.setAlignment(Qt.AlignmentFlag.AlignHCenter)

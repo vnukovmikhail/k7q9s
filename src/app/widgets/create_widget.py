@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
 from src.utils.str_util import validate_data, text_to_arr
 from src.utils.fs_util import create_collection
+from src.utils.config_util import config
 
 class MultiComboBox(QComboBox):
     def __init__(self):
@@ -69,7 +70,7 @@ class InitWidget(QWidget):
 
         labels['Tags'] = QLabel('Tags:')
         self.combo = MultiComboBox()
-        self.combo.addItems(['element_1', 'element_2', 'element_3', 'element_4', 'element_5'])
+        self.combo.addItems(config().get('tags') or [])
         self.combo.lineEdit().setText('')
 
         buttons['Select'] = QPushButton('Select file(s)')

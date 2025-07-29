@@ -1,3 +1,5 @@
+from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtCore import Qt
 from typing import Optional, List, Dict, Union
 import os
 
@@ -32,3 +34,7 @@ def filter_images(file_paths: List[str]) -> Union[List[str], str]:
     ]
     
     return filtered[0] if filtered else DEFAULT_IMAGE_PATH
+
+def elide_text(text, width, font):
+    metrics = QFontMetrics(font)
+    return metrics.elidedText(text, Qt.TextElideMode.ElideRight, width)
