@@ -8,5 +8,8 @@ cd k7q9s
 ### Build project
 
 ```bash
+pip install -r requirements.txt
 pyinstaller --onefile --windowed --name MyApp main.py
 ```
+
+## Later i will add builded project
