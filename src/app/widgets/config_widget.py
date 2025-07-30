@@ -1,5 +1,5 @@
 import sys, os, json, shutil, time, asyncio, random
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy, QStyle,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton,
                              QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
                              QFileDialog, QMessageBox, QComboBox, QMenu, QListWidget, QDialog,
@@ -26,7 +26,8 @@ class ConfigWidget(QWidget):
         self.lineEdit.setPlaceholderText('Write new tag')
 
         button = QPushButton()
-        button.setIcon(QIcon.fromTheme('list-add'))
+        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogNewFolder)
+        button.setIcon(icon)
         button.setFixedSize(16, 16)
         button.setFlat(True)
 

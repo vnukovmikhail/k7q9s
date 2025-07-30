@@ -1,4 +1,4 @@
-import sys, os, json, shutil, time, asyncio, random, pathlib
+import sys, os, json, shutil, time, asyncio, random, pathlib, inspect
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton, QTableWidget,
                              QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
@@ -8,122 +8,112 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandardItemModel
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
-from src.utils.str_util import validate_data, text_to_arr
+from src.app.templates.custom_combobox_template import MultiComboBox
+from src.utils.errors_util import Dialog, create_help_icon
+from src.utils.str_util import validate_data, text_to_arr, to_dict, log
 from src.utils.fs_util import create_collection
 from src.utils.config_util import config
 
-class MultiComboBox(QComboBox):
-    def __init__(self):
-        super().__init__()
-        self.setEditable(True)
-        self.lineEdit().setReadOnly(True)
-        self.lineEdit().installEventFilter(self)
-        self.model().dataChanged.connect(self.updateLineEdit)
-
-    def updateLineEdit(self):
-        text_container = []
-        for i in range(self.model().rowCount()):
-            if self.model().item(i).checkState() == Qt.CheckState.Checked:
-                text_container.append(self.model().item(i).text())
-        text_string = ', '.join(text_container)
-        self.lineEdit().setText(text_string)    
-
-    def addItems(self, items, itemList = None):
-        for id, text in enumerate(items):
-            try:
-                data = itemList[id]
-            except (TypeError, IndexError):
-                data = None
-            self.addItem(text, data)
-
-    def addItem(self, text, userData = None):
-        item = QStandardItem()
-        item.setText(text)
-
-        if not userData is None:
-            item.setData(userData)
-
-        item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
-        item.setData(Qt.CheckState.Unchecked, Qt.ItemDataRole.CheckStateRole) 
-
-        self.model().appendRow(item)
+RADIO_HELP_MESSAGE = '''"Copy files" - will copy all files and put them in your folder
+"Move files" - will move files from original path, to created folder path'''
 
 class InitWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.data = {
-            'title': None,
-            'tags': None,
-            'files': None,
-        }
+        self.input_fields = {}
+        self.form_labels = {}
+        self.action_buttons = {}
+        self.radio_buttons = {}
+        self.tags_combobox = MultiComboBox()
+        self.log_output = QTextEdit()
+
+        self.files = [] # This is data file
 
         layout = QGridLayout(self)
 
-        labels = {}
-        self.lineEdits = {}
-        buttons = {}
+        self.form_labels['title'] = QLabel('Title:')
+        self.input_fields['title'] = QLineEdit()
 
-        labels['Title'] = QLabel('Title')
-        labels['Title'].setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.lineEdits['Title'] = QLineEdit()
+        self.form_labels['tags'] = QLabel('Tags:')
 
-        labels['Tags'] = QLabel('Tags:')
-        self.combo = MultiComboBox()
-        self.combo.addItems(config().get('tags') or [])
-        self.combo.lineEdit().setText('')
+        self.action_buttons['select_files'] = QPushButton('Select file(s)')
+        self.action_buttons['select_files'].clicked.connect(self.select_files)
 
-        buttons['Select'] = QPushButton('Select file(s)')
-        buttons['Select'].clicked.connect(self.select_files)
+        self.action_buttons['init'] = QPushButton('Init Collection')
+        self.action_buttons['init'].clicked.connect(self.approve_creation)
+        self.input_fields['title'].setPlaceholderText('NAME_OF_FOLDER')
+        self.log_output.setReadOnly(True)
 
-        buttons['Init'] = QPushButton('Init Collection')
-        buttons['Init'].clicked.connect(self.approve_creation)
-        self.textEdit = QTextEdit()
-        self.textEdit.setReadOnly(True)
+        layout.addWidget(self.form_labels['title'],           0, 0, 1, 1)
+        layout.addWidget(self.input_fields['title'],          0, 1, 1, 1)
 
-        layout.addWidget(labels['Title'],         0, 0, 1, 1)
-        layout.addWidget(self.lineEdits['Title'], 0, 1, 1, 2)
+        layout.addWidget(self.form_labels['tags'],            1, 0, 1, 1)
+        layout.addWidget(self.tags_combobox,                  1, 1, 1, 1)
 
-        layout.addWidget(labels['Tags'],          1, 0, 1, 1)
-        layout.addWidget(self.combo,              1, 1, 1, 2)
+        layout.addWidget(self.action_buttons['select_files'], 2, 0, 1, 2)
 
-        layout.addWidget(buttons['Select'],       2, 0, 1, 3)
+        self.form_labels['type'] = QLabel('Type:')
+        self.radio_group = QButtonGroup(self)
+        self.radio_buttons['copy'] = QRadioButton('Copy files')
+        self.radio_buttons['move'] = QRadioButton('Move files')
 
-        layout.addWidget(buttons['Init'],         3, 0, 1, 3)
-        layout.addWidget(self.textEdit,           4, 0, 1, 3)
+        self.radio_group.addButton(self.radio_buttons['copy'], 1)
+        self.radio_group.addButton(self.radio_buttons['move'], 2)
+
+        self.radio_buttons['copy'].setChecked(True)
+        self.radio_buttons['copy'].setToolTip('File(s) will be copied')
+        self.radio_buttons['move'].setToolTip('File(s) will be moved')
+
+        radio_layout = QHBoxLayout()
+        radio_layout.addWidget(self.radio_buttons['copy'])
+        radio_layout.addWidget(self.radio_buttons['move'])
+        radio_layout.addWidget(create_help_icon(self, RADIO_HELP_MESSAGE))
+        radio_layout.addStretch() 
+
+        layout.addWidget(self.form_labels['type'],            3, 0, 1, 1)
+        layout.addLayout(radio_layout,                        3, 1, 1, 1)
+
+        layout.addWidget(self.action_buttons['init'],         4, 0, 1, 2)
+        layout.addWidget(self.log_output,                     5, 0, 1, 2)
+
 
     def select_files(self):
-        files, _ = QFileDialog.getOpenFileNames(
+        self.files, _ = QFileDialog.getOpenFileNames(
             parent = self,
             caption = 'Select file(s)',
             directory = os.path.expanduser('~'),
         )
-        self.data['files'] = files
 
     def approve_creation(self):
-        self.data['title'] = self.lineEdits['Title'].text()
-        self.data['tags'] = text_to_arr(self.combo.lineEdit().text(), ', ')
+        # Get data values from QLineEdit, QComboBox & QFileDialog
+        title = self.input_fields['title'].text()
+        tags = text_to_arr(self.tags_combobox.lineEdit().text(), ', ')
+        files = self.files
 
-        print(self.data)
+        data = to_dict(title, tags, files)
+        print(data)
 
-        title = 'Error'
-        message = 'Validation error:'
-        details = validate_data(self.data)
-        
-        if details[1]:
-            info = create_collection(self.data['title'], self.data['tags'], self.data['files'])
-            self.textEdit.setText(self.textEdit.toPlainText() + f'✅ Created on path: {info['folder_path']}\n')
+        is_valid, error_msg = validate_data(data)
+        print(is_valid, error_msg)
+
+        if is_valid:
+            info = create_collection(title, tags, files)
+            self.log_text_edit('✅ Created on path:', info['folder_path'])
+            # self.log_text_edit('✅ Created on path:', '/path/to/folder') # For tests
         else:
-            self.show_error_dialog(title, message, details[0])
+            Dialog.error(self, 'Error', 'Validation error:', error_msg)
 
-    def show_error_dialog(self, title, message, details):
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Icon.Critical)
+    def log_text_edit(self, msg:str, info:str):
+        self.log_output.setText(self.log_output.toPlainText() + log(f'{msg}{info}'))
 
-        msg.setWindowTitle(title)
-        msg.setText(message)
-        msg.setDetailedText(details)
+    def fetch_tags(self):
+        self.tags_combobox.clear() 
+        self.tags_combobox.addItems(config().get('tags') or [])
+        self.tags_combobox.lineEdit().setText('')
 
-        msg.setStandardButtons(QMessageBox.StandardButton.Cancel)
-        msg.exec()
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.fetch_tags()
+        
         

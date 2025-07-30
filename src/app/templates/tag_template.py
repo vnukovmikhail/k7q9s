@@ -21,7 +21,8 @@ class TagTemplate(QWidget):
         label = QLabel(self.tag)
 
         button = QPushButton()
-        button.setIcon(QIcon.fromTheme('edit-delete'))
+        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
+        button.setIcon(icon)
         button.setFlat(True)
         button.setFixedSize(16, 16)
         
