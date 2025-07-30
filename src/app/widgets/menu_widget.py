@@ -1,5 +1,5 @@
 import sys, os, json, shutil, time, asyncio, random, pathlib
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy, QTabWidget,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton, QTableWidget,
                              QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
                              QFileDialog, QMessageBox, QComboBox, QMenu, QListWidget, QDialog, QListView,
