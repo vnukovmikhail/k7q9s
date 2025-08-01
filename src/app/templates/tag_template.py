@@ -9,16 +9,19 @@ from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QMouseEvent, QFontMetric
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, pyqtSignal
 from typing import Optional, List, Dict
 
+from src.utils.sql_util import Sql
+
 class TagTemplate(QWidget):
-    deleted = pyqtSignal(str)
+    # deleted = pyqtSignal(str)
 
     def __init__(self, data):
         super().__init__()
-        self.tag = data
+        self.id = int(data['id'])
+        name = data['name']
 
         layout = QHBoxLayout(self)
 
-        label = QLabel(self.tag)
+        label = QLabel(name)
 
         button = QPushButton()
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
@@ -38,5 +41,10 @@ class TagTemplate(QWidget):
             if flow_layout:
                 flow_layout.removeWidget(self)
                 self.setParent(None)
-                self.deleted.emit(self.tag)
+                # self.deleted.emit(self.tag)
+
+                sql = Sql()
+                sql.remove_tag_from_db(self.id)
+                sql.close()
+
                 self.deleteLater()

@@ -6,3 +6,4 @@ __pycache__/
 public
 config.ini
 MyApp.spec
+test.db

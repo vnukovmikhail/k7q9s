@@ -8,15 +8,13 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy, QS
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer
 
-from src.utils.config_util import config
 from src.app.templates.tag_template import TagTemplate
 from src.app.layouts.flow_layout import FlowLayout
+from src.utils.sql_util import Sql
 
 class ConfigWidget(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.tags = []
 
         layout = QGridLayout(self)
 
@@ -31,8 +29,8 @@ class ConfigWidget(QWidget):
         button.setFixedSize(16, 16)
         button.setFlat(True)
 
-        self.lineEdit.returnPressed.connect(lambda:self.add_tag(self.lineEdit.text()))
-        button.clicked.connect(lambda:self.add_tag(self.lineEdit.text()))
+        self.lineEdit.returnPressed.connect(self.form_tag_approve)
+        button.clicked.connect(self.form_tag_approve)
 
         layout.addWidget(label,         0, 0, 1, 1)
         layout.addWidget(self.lineEdit, 0, 1, 1, 1)
@@ -50,33 +48,20 @@ class ConfigWidget(QWidget):
 
         self.fetch_tags()
 
+    def form_tag_approve(self):
+        sql = Sql()
+        tag = sql.add_tag_to_db(self.lineEdit.text())
+        self.add_tag(tag)
+        sql.close()
+
     def fetch_tags(self):
-        self.tags = config().get('tags') or []
+        sql = Sql()
+        tags = sql.fetch_tags_from_db()
         self.flow_layout.clear()
-        
-        [self.add_tag(tag, False) for tag in self.tags]
+        [self.add_tag(tag) for tag in tags]
+        sql.close()
 
-    def add_tag(self, value: str, new: bool = True):
-        value = value.strip()
-        if not value:
-            return 
-
-        if new:
-            normalized_value = value.lower()
-            normalized_array = [tag.strip().lower() for tag in self.tags]
-            if normalized_value in normalized_array:
-                return 
-            
-            self.tags.append(value)
-            config().set('tags', self.tags)
-
-        tag_template = TagTemplate(value)
-        tag_template.deleted.connect(self.remove_tag)
+    def add_tag(self, tag):
+        tag_template = TagTemplate(tag)
         self.flow_layout.addWidget(tag_template)
-
         self.lineEdit.clear()
-
-    def remove_tag(self, tag: str):
-        if tag in self.tags:
-            self.tags.remove(tag)
-            config().set('tags', self.tags)

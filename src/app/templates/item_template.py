@@ -3,18 +3,22 @@ from PyQt6.QtGui import QPixmap, QMouseEvent
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from src.utils.str_util import filter_images, elide_text
+from src.utils.fs_util import get_file_paths_in_folder
 
 class ItemTemplate(QWidget):
     clicked = pyqtSignal()
     def __init__(self, data):
         super().__init__()
-        self.title = data['meta']['title']
-        self.tags = data['meta']['tags']
-        self.created_at = data['meta']['created_at']
-        self.folder_path = data['folder_path']
-        self.pic_path = filter_images(data['files'])
 
-        # print(data)
+        self.id = data['id']
+        self.title = data['name']
+        self.tags = data['tags']
+        self.files = data['files']
+        self.created_at = data['created_at']
+        self.updated_at = data['updated_at']
+
+        file_paths = get_file_paths_in_folder(self.title, self.files)
+        self.pic_path = filter_images(file_paths)
         
         layout = QVBoxLayout(self)
 
@@ -31,7 +35,7 @@ class ItemTemplate(QWidget):
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
-            print('->', self.title)
+            print('->', f'{self.id} {self.title} {self.tags} {self.files} {self.created_at} {self.updated_at}')
         super().mousePressEvent(event)
 
     def resize_image2(self, height=500):

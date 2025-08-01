@@ -1,13 +1,6 @@
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtCore import Qt
-from typing import Optional, List, Dict, Union
 import os, inspect
-from datetime import datetime
-
-
-def log(text):
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    return f'[{now}] {text}\n'
 
 def validate_data(data):
     print(inspect.currentframe().f_code.co_name, data)
@@ -31,7 +24,7 @@ def text_to_arr(text: str, sep: str):
         arr = text.split(sep)
     return arr
 
-def filter_images(file_paths: List[str]) -> Union[List[str], str]:
+def filter_images(file_paths: list[str]) -> str:
     IMAGE_EXTENSIONS = {
         '.jpg', '.jpeg', '.png', '.gif',
         '.bmp', '.webp', '.tiff', '.svg'

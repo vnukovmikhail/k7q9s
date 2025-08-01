@@ -10,9 +10,15 @@ from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
 from src.app.templates.custom_combobox_template import MultiComboBox
 from src.utils.errors_util import Dialog, create_help_icon
-from src.utils.str_util import validate_data, text_to_arr, to_dict, log
-from src.utils.fs_util import create_collection
+from src.utils.str_util import validate_data, text_to_arr, to_dict
+# from src.utils.fs_util import create_collection
 from src.utils.config_util import config
+from datetime import datetime
+
+
+
+from src.utils.fs_util import create_folder_on_disk
+from src.utils.sql_util import Sql
 
 RADIO_HELP_MESSAGE = '''"Copy files" - will copy all files and put them in your folder
 "Move files" - will move files from original path, to created folder path'''
@@ -28,7 +34,7 @@ class InitWidget(QWidget):
         self.tags_combobox = MultiComboBox()
         self.log_output = QTextEdit()
 
-        self.files = [] # This is data file
+        self.file_paths = []
 
         layout = QGridLayout(self)
 
@@ -54,16 +60,16 @@ class InitWidget(QWidget):
         layout.addWidget(self.action_buttons['select_files'], 2, 0, 1, 2)
 
         self.form_labels['type'] = QLabel('Type:')
-        self.radio_group = QButtonGroup(self)
         self.radio_buttons['copy'] = QRadioButton('Copy files')
         self.radio_buttons['move'] = QRadioButton('Move files')
-
-        self.radio_group.addButton(self.radio_buttons['copy'], 1)
-        self.radio_group.addButton(self.radio_buttons['move'], 2)
 
         self.radio_buttons['copy'].setChecked(True)
         self.radio_buttons['copy'].setToolTip('File(s) will be copied')
         self.radio_buttons['move'].setToolTip('File(s) will be moved')
+
+        self.radio_group = QButtonGroup(self)
+        self.radio_group.addButton(self.radio_buttons['copy'], 0)
+        self.radio_group.addButton(self.radio_buttons['move'], 1)
 
         radio_layout = QHBoxLayout()
         radio_layout.addWidget(self.radio_buttons['copy'])
@@ -77,39 +83,49 @@ class InitWidget(QWidget):
         layout.addWidget(self.action_buttons['init'],         4, 0, 1, 2)
         layout.addWidget(self.log_output,                     5, 0, 1, 2)
 
-
     def select_files(self):
-        self.files, _ = QFileDialog.getOpenFileNames(
+        self.file_paths, _ = QFileDialog.getOpenFileNames(
             parent = self,
             caption = 'Select file(s)',
             directory = os.path.expanduser('~'),
         )
 
     def approve_creation(self):
-        # Get data values from QLineEdit, QComboBox & QFileDialog
+        # Get values from QLineEdit, QComboBox & QFileDialog
         title = self.input_fields['title'].text()
-        tags = text_to_arr(self.tags_combobox.lineEdit().text(), ', ')
-        files = self.files
+        tags = self.tags_combobox.value()
+        file_paths = self.file_paths
+        files = [os.path.basename(path) for path in file_paths]
+        move = bool(self.radio_group.checkedId())
 
+        # Validation
         data = to_dict(title, tags, files)
-        print(data)
-
         is_valid, error_msg = validate_data(data)
+
         print(is_valid, error_msg)
 
         if is_valid:
-            info = create_collection(title, tags, files)
-            self.log_text_edit('✅ Created on path:', info['folder_path'])
-            # self.log_text_edit('✅ Created on path:', '/path/to/folder') # For tests
+            # Adding to db
+            sql = Sql()
+            sql.add_folder_to_db(title, tags, files)
+            sql.close()
+
+            # Adding to disk
+            folder_path = create_folder_on_disk(title, file_paths, move)
+
+            self.log_text_edit(f'✅ Created on path: {folder_path}')
         else:
             Dialog.error(self, 'Error', 'Validation error:', error_msg)
 
-    def log_text_edit(self, msg:str, info:str):
-        self.log_output.setText(self.log_output.toPlainText() + log(f'{msg}{info}'))
+    def log_text_edit(self, text):
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.log_output.setText(self.log_output.toPlainText() + f'[{now}] {text}\n')
 
     def fetch_tags(self):
-        self.tags_combobox.clear() 
-        self.tags_combobox.addItems(config().get('tags') or [])
+        self.tags_combobox.clear()
+        sql = Sql()
+        [self.tags_combobox.addItem(tag['name'], tag['id']) for tag in sql.fetch_tags_from_db()]
+        sql.close()
         self.tags_combobox.lineEdit().setText('')
 
     def showEvent(self, event):
