@@ -8,11 +8,11 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy, QS
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer
 
-from src.app.templates.tag_template import TagTemplate
-from src.app.layouts.flow_layout import FlowLayout
-from src.utils.sql_util import Sql
+from app.gui.templates.tag_template import TagTemplate
+from app.gui.widgets.flow_scroll_widget import FlowScrollWidget
+from app.repositories.tag_repository import TagRepository
 
-class ConfigWidget(QWidget):
+class TagEditorWidget(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -36,32 +36,29 @@ class ConfigWidget(QWidget):
         layout.addWidget(self.lineEdit, 0, 1, 1, 1)
         layout.addWidget(button,        0, 2, 1, 1)
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
+        self.flow_widget = FlowScrollWidget()
 
-        content_widget = QWidget()
-        self.flow_layout = FlowLayout(content_widget)
-        self.flow_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-
-        scroll_area.setWidget(content_widget)
-        layout.addWidget(scroll_area,   1, 0, 1, 3)
+        layout.addWidget(self.flow_widget,   1, 0, 1, 3)
 
         self.fetch_tags()
 
     def form_tag_approve(self):
-        sql = Sql()
-        tag = sql.add_tag_to_db(self.lineEdit.text())
+        tag_repo = TagRepository()
+        tag_name = self.lineEdit.text()
+
+        tag = tag_repo.create(tag_name)
+
         self.add_tag(tag)
-        sql.close()
 
     def fetch_tags(self):
-        sql = Sql()
-        tags = sql.fetch_tags_from_db()
-        self.flow_layout.clear()
+        tag_repo = TagRepository()
+        tags = tag_repo.fetchall()
+
+        self.flow_widget.clear()
+
         [self.add_tag(tag) for tag in tags]
-        sql.close()
 
     def add_tag(self, tag):
         tag_template = TagTemplate(tag)
-        self.flow_layout.addWidget(tag_template)
+        self.flow_widget.addWidget(tag_template)
         self.lineEdit.clear()

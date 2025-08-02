@@ -1,4 +1,6 @@
 import sys, os, json, shutil, time, asyncio, random, pathlib, inspect
+from datetime import datetime
+
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
                              QCheckBox, QRadioButton, QButtonGroup, QPushButton, QTableWidget,
                              QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
@@ -8,22 +10,16 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy,
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandardItemModel
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
-from src.app.templates.custom_combobox_template import MultiComboBox
-from src.utils.errors_util import Dialog, create_help_icon
-from src.utils.str_util import validate_data, text_to_arr, to_dict
-# from src.utils.fs_util import create_collection
-from src.utils.config_util import config
-from datetime import datetime
-
-
-
-from src.utils.fs_util import create_folder_on_disk
-from src.utils.sql_util import Sql
+from app.gui.templates.multi_combobox_template import MultiComboBox
+from app.repositories.tag_repository import TagRepository
+from app.repositories.folder_repository import FolderRepository
+from app.utils.fs_util import create_folder_on_disk
+from app.utils.str_util import validate_data, text_to_arr, to_dict
 
 RADIO_HELP_MESSAGE = '''"Copy files" - will copy all files and put them in your folder
 "Move files" - will move files from original path, to created folder path'''
 
-class InitWidget(QWidget):
+class FolderCreatorWidget(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -74,7 +70,6 @@ class InitWidget(QWidget):
         radio_layout = QHBoxLayout()
         radio_layout.addWidget(self.radio_buttons['copy'])
         radio_layout.addWidget(self.radio_buttons['move'])
-        radio_layout.addWidget(create_help_icon(self, RADIO_HELP_MESSAGE))
         radio_layout.addStretch() 
 
         layout.addWidget(self.form_labels['type'],            3, 0, 1, 1)
@@ -82,6 +77,10 @@ class InitWidget(QWidget):
 
         layout.addWidget(self.action_buttons['init'],         4, 0, 1, 2)
         layout.addWidget(self.log_output,                     5, 0, 1, 2)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.fetch_tags()
 
     def select_files(self):
         self.file_paths, _ = QFileDialog.getOpenFileNames(
@@ -98,7 +97,7 @@ class InitWidget(QWidget):
         files = [os.path.basename(path) for path in file_paths]
         move = bool(self.radio_group.checkedId())
 
-        # Validation
+        # validation
         data = to_dict(title, tags, files)
         is_valid, error_msg = validate_data(data)
 
@@ -106,30 +105,19 @@ class InitWidget(QWidget):
 
         if is_valid:
             # Adding to db
-            sql = Sql()
-            sql.add_folder_to_db(title, tags, files)
-            sql.close()
-
+            folder_repo = FolderRepository()
+            folder_repo.create(title, tags, files)
             # Adding to disk
             folder_path = create_folder_on_disk(title, file_paths, move)
 
             self.log_text_edit(f'✅ Created on path: {folder_path}')
         else:
-            Dialog.error(self, 'Error', 'Validation error:', error_msg)
+            pass # validate error
 
     def log_text_edit(self, text):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.log_output.setText(self.log_output.toPlainText() + f'[{now}] {text}\n')
 
     def fetch_tags(self):
-        self.tags_combobox.clear()
-        sql = Sql()
-        [self.tags_combobox.addItem(tag['name'], tag['id']) for tag in sql.fetch_tags_from_db()]
-        sql.close()
-        self.tags_combobox.lineEdit().setText('')
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.fetch_tags()
-        
-        
+        tag_repo = TagRepository()
+        [self.tags_combobox.addItem(tag['name'], tag['id']) for tag in tag_repo.fetchall()]

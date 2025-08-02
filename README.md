@@ -1,3 +1,7 @@
+## Information
+
+### program was created as my university project, its open source soo... u can use it for personal purposes. 
+
 ## Installation
 
 ```bash
