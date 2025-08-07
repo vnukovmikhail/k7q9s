@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtGui import QIcon, QFont
 
 from app.gui.widgets.central_widget import CentralWidget
-from app.utils.resource_util import resource_path
+from app.utils.res_util import resource_path
 
 class MainWindow(QMainWindow):
     def __init__(self):

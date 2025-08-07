@@ -3,21 +3,19 @@ from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QLabel, QStyle
 from app.repositories.tag_repository import TagRepository
 
 class TagTemplate(QWidget):
-    def __init__(self, data):
+    def __init__(self, tag_name:str):
         super().__init__()
-        self.id = int(data['id'])
-        name = data['name']
+        self.t = TagRepository(tag_name)
 
-        layout = QHBoxLayout(self)
-
-        label = QLabel(name)
+        label = QLabel(self.t.tag_name)
 
         button = QPushButton()
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
         button.setIcon(icon)
         button.setFlat(True)
         button.setFixedSize(16, 16)
-        
+
+        layout = QHBoxLayout(self)
         layout.addWidget(label)
         layout.addWidget(button)
 
@@ -31,7 +29,6 @@ class TagTemplate(QWidget):
                 flow_layout.removeWidget(self)
                 self.setParent(None)
 
-                tag_repo = TagRepository()
-                tag_repo.delete(self.id)
+                self.t.delete()
 
                 self.deleteLater()

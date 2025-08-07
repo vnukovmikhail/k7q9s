@@ -1,15 +1,15 @@
 from PyQt6.QtWidgets import QComboBox
-from PyQt6.QtGui import QStandardItem
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QStandardItem, QStandardItemModel, QMouseEvent
+from PyQt6.QtCore import Qt, QEvent
 
 class MultiComboBox(QComboBox):
     def __init__(self):
         super().__init__()
         self.setEditable(True)
         self.lineEdit().setReadOnly(True)
-        self.lineEdit().installEventFilter(self)
+        self.setModel(QStandardItemModel(self))
         self.model().dataChanged.connect(self.updateLineEdit)
-        self._existing_items = set()
+        self.lineEdit().installEventFilter(self)
 
     def updateLineEdit(self):
         text_container = []
@@ -25,17 +25,9 @@ class MultiComboBox(QComboBox):
                 data = itemList[id] if itemList else None
             except (TypeError, IndexError):
                 data = None
-            
-            item_key = (text, data)
-            if item_key not in self._existing_items:
-                self.addItem(text, data)
-                self._existing_items.add(item_key)
+            self.addItem(text, data)
 
     def addItem(self, text, userData=None):
-        item_key = (text, userData)
-        if item_key in self._existing_items:
-            return
-            
         item = QStandardItem()
         item.setText(text)
 
@@ -46,7 +38,6 @@ class MultiComboBox(QComboBox):
         item.setData(Qt.CheckState.Unchecked, Qt.ItemDataRole.CheckStateRole) 
 
         self.model().appendRow(item)
-        self._existing_items.add(item_key)
 
     def value(self):
         ids = []
@@ -57,6 +48,14 @@ class MultiComboBox(QComboBox):
                     ids.append(user_data)
         return ids
 
+    def eventFilter(self, obj, event):
+        if obj == self.lineEdit() and event.type() == QEvent.Type.MouseButtonPress: 
+            self.showPopup()
+            return True
+        return super().eventFilter(obj, event)
+
     def clear(self):
-        super().clear()
-        self._existing_items.clear()
+        self.model().clear()
+        self.lineEdit().clear()
+
+    

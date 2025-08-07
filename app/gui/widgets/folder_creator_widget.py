@@ -11,13 +11,8 @@ from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandard
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 
 from app.gui.templates.multi_combobox_template import MultiComboBox
-from app.repositories.tag_repository import TagRepository
 from app.repositories.folder_repository import FolderRepository
-from app.utils.fs_util import create_folder_on_disk
-from app.utils.str_util import validate_data, text_to_arr, to_dict
-
-RADIO_HELP_MESSAGE = '''"Copy files" - will copy all files and put them in your folder
-"Move files" - will move files from original path, to created folder path'''
+from app.repositories.tag_repository import fetchall_tags
 
 class FolderCreatorWidget(QWidget):
     def __init__(self):
@@ -89,35 +84,22 @@ class FolderCreatorWidget(QWidget):
             directory = os.path.expanduser('~'),
         )
 
+    def fetch_tags(self):
+        self.tags_combobox.clear()
+        [self.tags_combobox.addItem(tag['name'], tag['id']) for tag in fetchall_tags()]
+
     def approve_creation(self):
-        # Get values from QLineEdit, QComboBox & QFileDialog
         title = self.input_fields['title'].text()
         tags = self.tags_combobox.value()
         file_paths = self.file_paths
         files = [os.path.basename(path) for path in file_paths]
         move = bool(self.radio_group.checkedId())
 
-        # validation
-        data = to_dict(title, tags, files)
-        is_valid, error_msg = validate_data(data)
+        print(title, tags, file_paths, move)
 
-        print(is_valid, error_msg)
+        fr = FolderRepository(title)
+        fr.add_files(file_paths, move)
+        fr.add_tags(tags)
 
-        if is_valid:
-            # Adding to db
-            folder_repo = FolderRepository()
-            folder_repo.create(title, tags, files)
-            # Adding to disk
-            folder_path = create_folder_on_disk(title, file_paths, move)
 
-            self.log_text_edit(f'✅ Created on path: {folder_path}')
-        else:
-            pass # validate error
-
-    def log_text_edit(self, text):
-        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.log_output.setText(self.log_output.toPlainText() + f'[{now}] {text}\n')
-
-    def fetch_tags(self):
-        tag_repo = TagRepository()
-        [self.tags_combobox.addItem(tag['name'], tag['id']) for tag in tag_repo.fetchall()]
+        

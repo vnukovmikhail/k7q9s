@@ -17,5 +17,5 @@ class ItemTemplate(QWidget):
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
-            print('->', f'{self.id} {self.title} {self.tags} {self.files} {self.created_at} {self.updated_at}')
+            print('[~] ->', f'{self.id} {self.title} {self.tags} {self.files} {self.created_at} {self.updated_at}')
         super().mousePressEvent(event)

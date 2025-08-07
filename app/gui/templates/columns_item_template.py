@@ -2,17 +2,18 @@ from PyQt6.QtWidgets import QWidget, QSizePolicy,QSizePolicy, QGridLayout, QVBox
 from PyQt6.QtGui import QPixmap, QMouseEvent
 from PyQt6.QtCore import Qt, pyqtSignal
 
-from app.utils.str_util import filter_images
-from app.utils.fs_util import get_file_paths_in_folder
+# from app.utils.str_util import filter_images
+# from app.utils.fs_util import get_file_paths_in_folder
 from app.gui.templates.item_template import ItemTemplate
 
 class ColumnsItemTemplate(ItemTemplate):
     def __init__(self, data):
         super().__init__(data)
 
-        file_paths = get_file_paths_in_folder(self.title, self.files)
-        self.pic_path = filter_images(file_paths)
-        self.pixmap = QPixmap(self.pic_path)
+        # file_paths = get_file_paths_in_folder(self.title, self.files)
+        # self.pic_path = filter_images(file_paths)
+        # self.pixmap = QPixmap(self.pic_path)
+        self.pixmap = QPixmap('app/resources/pic.png')
         
         layout = QGridLayout(self)
 

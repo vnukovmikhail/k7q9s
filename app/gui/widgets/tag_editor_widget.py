@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt, QSize, QSettings, QTimer
 
 from app.gui.templates.tag_template import TagTemplate
 from app.gui.widgets.flow_scroll_widget import FlowScrollWidget
-from app.repositories.tag_repository import TagRepository
+from app.repositories.tag_repository import fetchall_tags
 
 class TagEditorWidget(QWidget):
     def __init__(self):
@@ -43,22 +43,15 @@ class TagEditorWidget(QWidget):
         self.fetch_tags()
 
     def form_tag_approve(self):
-        tag_repo = TagRepository()
         tag_name = self.lineEdit.text()
-
-        tag = tag_repo.create(tag_name)
-
-        self.add_tag(tag)
+        self.add_tag(tag_name)
+        self.fetch_tags()
 
     def fetch_tags(self):
-        tag_repo = TagRepository()
-        tags = tag_repo.fetchall()
-
         self.flow_widget.clear()
+        [self.add_tag(tag['name']) for tag in fetchall_tags()]
 
-        [self.add_tag(tag) for tag in tags]
-
-    def add_tag(self, tag):
-        tag_template = TagTemplate(tag)
+    def add_tag(self, tag_name:str):
+        tag_template = TagTemplate(tag_name)
         self.flow_widget.addWidget(tag_template)
         self.lineEdit.clear()

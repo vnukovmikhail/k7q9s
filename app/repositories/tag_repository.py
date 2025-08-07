@@ -1,49 +1,55 @@
-import sqlite3
-from app.utils.sql_util import DatabaseConnection
-from app.utils.logger_util import get_logger
+from app.utils.sql_util import SQLiteDatabase
 
-logger = get_logger(__name__)
+def fetchall_tags() -> list[dict[str]]:
+    with SQLiteDatabase() as db:
+        try: 
+            # db.execute("SELECT * FROM tags")
+            # print('[!] Tags', [dict(row) for row in db.fetchall()])
+            # db.execute("SELECT * FROM folder_tags")
+            # print('[!] Folders->Tags', [dict(row) for row in db.fetchall()])
+            
+            db.execute("SELECT * FROM tags")
+            return [dict(row) for row in db.fetchall()]
+        except:
+            return []
 
 class TagRepository:
-    def __init__(self, db_connection: DatabaseConnection = None):
-        self.db = db_connection if db_connection else DatabaseConnection()
+    def __init__(self, tag_name:str):
+        self.tag_name = tag_name.strip()
+        self.tag_id = None
 
-    def create(self, tag_name:str) -> dict[int, str]:
-        try:
-            with self.db.get_cursor() as cursor:
-                cursor.execute("INSERT OR IGNORE INTO tags (name) VALUES (?)", (tag_name,))
-                cursor.execute("SELECT id FROM tags WHERE name = ?", (tag_name,))
-                tag_id = cursor.fetchone()[0]
+        self._ensure_schema()
+        self._ensure_tag_in_db()
 
-                logger.debug(f"tag '{tag_name}' was created with id: {tag_id}")
-                return {'id': tag_id, 'name': tag_name}
-        except sqlite3.Error as e:
-            logger.error(e)
-            return {}
-        
-    def delete(self, tag_id:int) -> bool:
-        try:
-            with self.db.get_cursor() as cursor:
-                cursor.execute("DELETE FROM folder_tags WHERE tag_id = ?", (tag_id,))
-                cursor.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
-            
-                logger.debug(f"tag with id'{tag_id}' was removed")
-                return True
-        except sqlite3.Error as e:
-            logger.error(e)
-            return False
-        
-    def fetchall(self) -> list[dict[int, str]]:
-        try:
-            with self.db.get_cursor() as cursor:
-                cursor.execute("SELECT id, name FROM tags ORDER BY id")
-                tags = cursor.fetchall()
+    def _ensure_schema(self):
+        with SQLiteDatabase() as db:
+            db.execute("""CREATE TABLE IF NOT EXISTS tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL
+            )""")
+            db.execute("""CREATE TABLE IF NOT EXISTS folder_tags (
+                folder_id TEXT NOT NULL,
+                tag_id INTEGER NOT NULL,
+                PRIMARY KEY (folder_id, tag_id),
+                FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE,
+                FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE 
+            )""")
 
-                result = [{'id': tag_id, 'name': tag_name} for tag_id, tag_name in tags]
+    def _ensure_tag_in_db(self):
+        with SQLiteDatabase() as db:
+            db.execute("SELECT id FROM tags WHERE name = ?", (self.tag_name,))
+            result = db.fetchone()
 
-                logger.debug(f'fetched: {result}')
-                return result
-        except sqlite3.Error as e:
-            logger.error(e)
-            return []
+            if result:
+                self.tag_id = result['id']
+            else:
+                db.execute("INSERT INTO tags (name) VALUES (?)", (self.tag_name,))
+                self.tag_id = db.lastrowid
+
+    def delete(self):
+        with SQLiteDatabase() as db:
+            db.execute("PRAGMA foreign_keys = ON")
+            db.execute("DELETE FROM tags WHERE id = ?", (self.tag_id,))
+            # db.execute("DELETE FROM folder_files WHERE folder_id = ?", (self.folder_id,))
+            # db.execute("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM folder_tags)")
     

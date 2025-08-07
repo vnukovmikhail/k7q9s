@@ -9,7 +9,7 @@ from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandard
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
 from PyQt6.QtSql import QSqlDatabase, QSqlTableModel, QSqlQuery
 
-from app.utils.sql_util import DB_PATH
+from app.utils.sql_util import SQLITE_PATH
 
 class TestWidget(QWidget):
     def __init__(self):
@@ -17,49 +17,44 @@ class TestWidget(QWidget):
 
         self.create_connection()
 
-        self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText("Search by name...")
-
-        self.model = QSqlTableModel()
-        self.model.setTable('folder_tags')
-        self.model.select()
+        folder_tags_model = QSqlTableModel()
+        folder_tags_model.setTable('folder_tags')
+        folder_tags_model.select()
         self.view0 = QTableView()
-        self.view0.setModel(self.model)
+        self.view0.setModel(folder_tags_model)
 
-        model1 = QSqlTableModel()
-        model1.setTable('tags')
-        model1.select()
+        tags_model = QSqlTableModel()
+        tags_model.setTable('tags')
+        tags_model.select()
         self.view1 = QTableView()
-        self.view1.setModel(model1)
+        self.view1.setModel(tags_model)
 
-        self.model2 = QSqlTableModel()
-        self.model2.setTable('folders')
-        self.model2.select()
+        folders_model = QSqlTableModel()
+        folders_model.setTable('folders')
+        folders_model.select()
         self.view2 = QTableView()
-        self.view2.setModel(self.model2)
+        self.view2.setModel(folders_model)
 
-        self.search_box.textChanged.connect(self.apply_filter)
+        folder_files_model = QSqlTableModel()
+        folder_files_model.setTable('folder_files')
+        folder_files_model.select()
+        self.view3 = QTableView()
+        self.view3.setModel(folder_files_model)
 
         layout = QGridLayout(self)
+        layout.addWidget(self.view0, 0, 0)
+        layout.addWidget(self.view3, 0, 1)
+        layout.addWidget(self.view1, 0, 2)
+        layout.addWidget(self.view2, 1, 0, 1, 3)
         
-        layout.addWidget(self.view0, 0, 0, 1, 2)
-        layout.addWidget(self.view1, 0, 2,)
-        layout.addWidget(self.search_box, 1, 0, 1, 3)
-        layout.addWidget(self.view2, 2, 0, 1, 3)
 
     def create_connection(self):
         db = QSqlDatabase.addDatabase('QSQLITE')
-        db.setDatabaseName(DB_PATH)
+        db.setDatabaseName(SQLITE_PATH)
         if not db.open():
+            print('fd')
             return False
         return True
-
-    def apply_filter(self, text):
-        text = text.replace("'", "''")
-        if text:
-            self.model2.setFilter(f"name LIKE '%{text}%'")
-        else:
-            self.model2.setFilter("")
 
     def showEvent(self, event):
         super().showEvent(event)

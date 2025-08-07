@@ -1,176 +1,188 @@
-import sqlite3, json
-from app.utils.sql_util import DatabaseConnection, VALID_COLUMNS
-from app.utils.logger_util import get_logger
+from datetime import datetime
+from pathlib import Path
+from app.utils.sql_util import SQLiteDatabase
+from app.utils.fs_util import FolderManager, random_name
 
-logger = get_logger(__name__)
+def folders_count():
+    with SQLiteDatabase() as db:
+        try:
+            db.execute("SELECT COUNT(*) as count FROM folders")
+            result = db.fetchone()
+            return result['count']
+        except:
+            return 0
+
+def fetchall_folders(
+    order_by: str = 'created_at',
+    desc: bool = False,
+    search_field: str = None,
+    search_value: str = None,
+    tag_ids: list[str] = None,
+    page: int = 1,
+    page_size: int = 10
+) -> list[dict[str]]:
+    offset = (page - 1) * page_size
+    
+    with SQLiteDatabase() as db:
+        try:
+            # db.execute("SELECT * FROM folders")
+            # print('[!] Folders', [dict(row) for row in db.fetchall()])
+            # db.execute("SELECT * FROM files")
+            # print('[!] Files', [dict(row) for row in db.fetchall()])
+            # db.execute("SELECT * FROM folder_files")
+            # print('[!] Folder->Files', [dict(row) for row in db.fetchall()])
+
+            db.execute("SELECT * FROM folders")
+            # db.execute("""SELECT * FROM folders
+            # ORDER BY created_at DESC   ORDER BY ? ?
+            # LIMIT ? OFFSET ?""", (page_size, offset))
+            folders = [dict(row) for row in db.fetchall()]
+            
+            result = []
+            for folder in folders:
+                folder_id = folder['id']
+
+                db.execute("SELECT * FROM folders WHERE id = ?", (folder_id,))
+                folder = db.fetchone()
+                
+                db.execute('''
+                    SELECT f.id, f.name 
+                    FROM files f
+                    JOIN folder_files ff ON f.id = ff.file_id
+                    WHERE ff.folder_id = ?
+                ''', (folder_id,))
+                files = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
+
+                tags = []
+                try:
+                    db.execute('''
+                        SELECT t.id, t.name 
+                        FROM tags t
+                        JOIN folder_tags ft ON t.id = ft.tag_id
+                        WHERE ft.folder_id = ?
+                    ''', (folder_id,))
+                    tags = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
+                except:
+                    pass
+            
+                result.append({**folder, 'files': files, 'tags': tags}) 
+
+            return result
+        except:
+            return []
+        
+        
 
 class FolderRepository:
-    def __init__(self, db_connection: DatabaseConnection = None):
-        self.db = db_connection if db_connection else DatabaseConnection()
+    def __init__(self, folder_name:str):
+        self.folder_name = folder_name.strip() if folder_name else random_name()
+        self.folder_id = None
+        self.fs = FolderManager(self.folder_name)
 
-    def create(self,
-        folder_name: str,
-        tag_ids: list[str],
-        file_list: list[str],
-    ) -> bool:
-        try:
-            with self.db.get_cursor() as cursor:
-                files_json = json.dumps(file_list, ensure_ascii=False)
+        self._ensure_schema()
+        self._ensure_folder_in_db()
 
-                cursor.execute("INSERT INTO folders (name, files) VALUES (?, ?)", (folder_name, files_json))
-
-                folder_id = self.cursor.lastrowid
-
-                for tag_id in tag_ids:
-                    cursor.execute("INSERT INTO folder_tags (folder_id, tag_id) VALUES (?, ?)", (folder_id, tag_id))
-
-                logger.debug(f"📂 folder '{folder_name}' was created with tag ids: {tag_ids}")
-                return True
-        except sqlite3.Error as e:
-            logger.error(e)
-            return False
-        
-    def fetchall(self,
-        order_by: str = 'created_at',
-        desc: bool = False,
-        search_field: str = None,
-        search_value: str = None,
-        tag_ids: list[int] = None,
-    ) -> list[dict]:
-        try:
-            if tag_ids:
-                return self._get_by_tags(
-                    tag_ids = tag_ids,
+    def _ensure_schema(self):
+        with SQLiteDatabase() as db:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS folders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS files (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE
+                )
+            """)
+            db.execute("""CREATE TABLE IF NOT EXISTS folder_files (
+                folder_id INTEGER NOT NULL,
+                file_id INTEGER NOT NULL,
+                PRIMARY KEY (folder_id, file_id),
+                FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE,
+                FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
+            )""")
+
+    def _ensure_folder_in_db(self):
+        with SQLiteDatabase() as db:
+            db.execute("SELECT id FROM folders WHERE name = ?", (self.folder_name,))
+            result = db.fetchone()
+
+            if result:
+                self.folder_id = result['id']
             else:
-                return self._get_by_args(
-                    order_by = order_by,
-                    desc = desc,
-                    search_field = search_field,
-                    search_value = search_value,
+                db.execute(
+                    "INSERT OR IGNORE INTO folders (name) VALUES (?)",
+                    (self.folder_name,)
                 )
-        except sqlite3.Error as e:
-            logger.error(e)
-            return []
-        
-    def _get_by_tags(self,
-        tag_ids: list[int],
-    ) -> list[dict]:
-        placeholders = ','.join('?' for _ in tag_ids)
-        
-        full_match_query = f"""
-            SELECT f.id, f.name, f.files, f.created_at, f.updated_at,
-                GROUP_CONCAT(t.name, ', ') as tag_names,
-                GROUP_CONCAT(t.id, ', ') as tag_ids
-            FROM folders f
-            JOIN folder_tags ft ON f.id = ft.folder_id
-            JOIN tags t ON t.id = ft.tag_id
-            WHERE ft.tag_id IN ({placeholders})
-            GROUP BY f.id
-            HAVING COUNT(DISTINCT ft.tag_id) = ?
-        """
-        
-        partial_match_query = f"""
-            SELECT DISTINCT f.id, f.name, f.files, f.created_at, f.updated_at,
-                GROUP_CONCAT(t.name, ', ') as tag_names,
-                GROUP_CONCAT(t.id, ', ') as tag_ids
-            FROM folders f
-            JOIN folder_tags ft ON f.id = ft.folder_id
-            JOIN tags t ON t.id = ft.tag_id
-            WHERE t.id IN ({placeholders})
-            GROUP BY f.id
-        """
-        
-        try:
-            with self.db.get_cursor() as cursor:
-                cursor.execute(full_match_query, tag_ids + [len(tag_ids)])
-                full_matches = cursor.fetchall()
-                
-                cursor.execute(partial_match_query, tag_ids)
-                all_matches = cursor.fetchall()
-                
-                full_match_ids = {row[0] for row in full_matches}
-                partial_matches = [row for row in all_matches if row[0] not in full_match_ids]
+                self.folder_id = db.lastrowid()
+
+    def add_file(self, file_path: str, move: bool = False):
+        src = Path(file_path)
+        with SQLiteDatabase() as db:
+            db.execute("INSERT OR IGNORE INTO files (name) VALUES (?)", (src.name,))
+
+            db.execute("SELECT id FROM files WHERE name = ?", (src.name,))
+            file_row = db.fetchone()
+            if not file_row:
+                print(f'[!] Failed to fetch file_id for {src.name}')
+                return
+            file_id = file_row["id"] 
+
+            db.execute("""
+                INSERT OR IGNORE INTO folder_files (folder_id, file_id) VALUES (?, ?)
+            """, (self.folder_id, file_id))
+        self.fs.add_file(file_path, move)
+
+    def add_files(self, file_paths: list[str], move: bool = False):
+        for path in file_paths:
+            self.add_file(path, move)
+
+    def add_tag(self, tag_id:int):
+        with SQLiteDatabase() as db:
+            db.execute("""
+                INSERT OR IGNORE INTO folder_tags (folder_id, tag_id) VALUES (?, ?)
+            """, (self.folder_id, tag_id))
+
+    def add_tags(self, tag_ids: list[int]):
+        for tag_id in tag_ids:
+            self.add_tag(tag_id)
+
+    def delete(self):
+        with SQLiteDatabase() as db:
+            db.execute("PRAGMA foreign_keys = ON")
+            db.execute("DELETE FROM folders WHERE id = ?", (self.folder_id,))
+            # db.execute("DELETE FROM folder_files WHERE folder_id = ?", (self.folder_id,))
+            db.execute("DELETE FROM files WHERE id NOT IN (SELECT file_id FROM folder_files)")
+
+        if self.fs.delete_folder():
+            print(f"[x] Folder '{self.folder_name}' deleted from disk and database.")
+        else:
+            print(f"[!] Folder '{self.folder_name}' not found on disk.")
+
+    def get(self):
+        with SQLiteDatabase() as db:
+            db.execute("SELECT * FROM folders WHERE id = ?", (self.folder_id,))
+            folder = db.fetchone()
             
-                combined_results = full_matches + partial_matches
-                
-                result = []
-                for row in combined_results:
-                    folder = {
-                        'id': row[0],
-                        'name': row[1],
-                        'files': json.loads(row[2]) if row[2] else [],
-                        'created_at': row[3],
-                        'updated_at': row[4],
-                        'tags': {
-                            'names': row[5].split(', ') if row[5] else [],
-                            'ids': list(map(int, row[6].split(', '))) if row[6] else []
-                        },
-                        'match_type': 'full' if row in full_matches else 'partial'
-                    }
-                    result.append(folder)
+            db.execute('''
+                SELECT f.id, f.name 
+                FROM files f
+                JOIN folder_files ff ON f.id = ff.file_id
+                WHERE ff.folder_id = ?
+            ''', (self.folder_id,))
+            
+            files = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
 
-                logger.debug(f'fetched by tags: {result}')
-                return result
-        except sqlite3.Error as e:
-            logger.error(e)
-            return []
-
-    def _get_by_args(
-        self,
-        order_by: str = 'created_at',
-        desc: bool = False,
-        search_field: str = None,
-        search_value: str = None,
-    ) -> list[dict]:
-        order_by = order_by if order_by in VALID_COLUMNS else 'created_at'
-        direction = 'DESC' if desc else 'ASC'
-
-        query = """
-            SELECT 
-                f.id, f.name, f.files, f.created_at, f.updated_at,
-                GROUP_CONCAT(DISTINCT t.name) as tag_names,
-                GROUP_CONCAT(DISTINCT t.id) as tag_ids
-            FROM folders f
-            LEFT JOIN folder_tags ft ON f.id = ft.folder_id
-            LEFT JOIN tags t ON t.id = ft.tag_id
-        """
+            db.execute('''
+                SELECT t.id, t.name 
+                FROM tags t
+                JOIN folder_tags ft ON t.id = ft.tag_id
+                WHERE ft.folder_id = ?
+            ''', (self.folder_id,))
+            tags = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
         
-        params = []
-
-        if search_field in VALID_COLUMNS and search_value:
-            if search_field == 'id' and search_value.isdigit():
-                query += f" WHERE f.{search_field} = ?"
-                params.append(int(search_value))
-            else:
-                query += f" WHERE f.{search_field} LIKE ?"
-                params.append(f"%{search_value}%")
-
-        query += f" GROUP BY f.id, f.name, f.files, f.created_at, f.updated_at ORDER BY f.{order_by} {direction}"
-
-        try:
-            with self.db.get_cursor() as cursor:
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
-
-                result = []
-                for row in rows:
-                    folder = {
-                        'id': row[0],
-                        'name': row[1],
-                        'files': json.loads(row[2]) if row[2] else [],
-                        'created_at': row[3],
-                        'updated_at': row[4],
-                        'tags': {
-                            'names': row[5].split(',') if row[5] else [],
-                            'ids': list(map(int, row[6].split(','))) if row[6] else []
-                        },
-                        'match_type': 'none'
-                    }
-                    result.append(folder)
-
-                logger.debug(f'fetched by args: {result}')
-                return result
-        except sqlite3.Error as error:
-            print(error)
-            return []
+            return {**folder, 'files': files, 'tags': tags}
