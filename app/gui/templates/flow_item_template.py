@@ -14,7 +14,6 @@ class FlowItemTemplate(ItemTemplate):
 
         self.pixmap = QPixmap(self.pic_paths)
         
-        
         self.pic_label = QLabel()
 
         self.title_label = QLabel()
@@ -25,7 +24,9 @@ class FlowItemTemplate(ItemTemplate):
         layout.addWidget(self.pic_label)
         layout.addWidget(self.title_label)
 
-    def resize_image(self, height: int = 100):
+        self.resize_image()
+
+    def resize_image(self, height: int = 150):
         width = (self.pixmap.width() * height) // self.pixmap.height()
         scaled_pixmap = self.pixmap.scaled(
             width,

@@ -39,6 +39,8 @@ class MultiComboBox(QComboBox):
 
         self.model().appendRow(item)
 
+        self.setCurrentIndex(-1)
+
     def value(self):
         ids = []
         for i in range(self.model().rowCount()):

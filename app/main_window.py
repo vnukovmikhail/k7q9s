@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtGui import QIcon, QFont
 
 from app.gui.widgets.central_widget import CentralWidget
+from app.gui.widgets.menu_widget import MenuWidget
 from app.utils.res_util import resource_path
 
 class MainWindow(QMainWindow):
@@ -13,6 +14,9 @@ class MainWindow(QMainWindow):
         self.setFont(QFont('monospace'))
         self.setMinimumSize(300, 500)
         
-        # self.setMenuBar()
+        self.setMenuBar(MenuWidget())
         # self.setMenuWidget()
         self.setCentralWidget(CentralWidget())
+        
+        # status = self.statusBar()
+        # status.showMessage('program has been started!', 3000)

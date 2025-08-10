@@ -1,16 +1,8 @@
-from datetime import datetime
 from pathlib import Path
 from app.utils.sql_util import SQLiteDatabase
 from app.utils.fs_util import FolderManager, random_name
 
-def folders_count():
-    with SQLiteDatabase() as db:
-        try:
-            db.execute("SELECT COUNT(*) as count FROM folders")
-            result = db.fetchone()
-            return result['count']
-        except:
-            return 0
+VALID_ORDER_FIELDS = ['id', 'name', 'created_at', 'updated_at']
 
 def fetchall_folders(
     order_by: str = 'created_at',
@@ -21,30 +13,67 @@ def fetchall_folders(
     page: int = 1,
     page_size: int = 10
 ) -> list[dict[str]]:
-    offset = (page - 1) * page_size
-    
     with SQLiteDatabase() as db:
         try:
-            # db.execute("SELECT * FROM folders")
-            # print('[!] Folders', [dict(row) for row in db.fetchall()])
-            # db.execute("SELECT * FROM files")
-            # print('[!] Files', [dict(row) for row in db.fetchall()])
-            # db.execute("SELECT * FROM folder_files")
-            # print('[!] Folder->Files', [dict(row) for row in db.fetchall()])
+            valid_order_fields = VALID_ORDER_FIELDS
+            if order_by not in valid_order_fields:
+                order_by = 'created_at'
 
-            db.execute("SELECT * FROM folders")
-            # db.execute("""SELECT * FROM folders
-            # ORDER BY created_at DESC   ORDER BY ? ?
-            # LIMIT ? OFFSET ?""", (page_size, offset))
+            base_query = "SELECT * FROM folders"
+            filters = []
+            params = []
+
+            if search_field and search_value:
+                filters.append(f"{search_field} LIKE ?")
+                params.append(f"%{search_value}%")
+
+            if tag_ids:
+                tag_placeholders = ",".join("?" for _ in tag_ids)
+                filters.append(f"""
+                    id IN (
+                        SELECT folder_id FROM folder_tags
+                        WHERE tag_id IN ({tag_placeholders})
+                        GROUP BY folder_id
+                        HAVING COUNT(DISTINCT tag_id) = ?
+                    )
+                """)
+                params.extend(tag_ids)
+                params.append(len(tag_ids))
+
+                order_clause = f" ORDER BY is_full_match DESC, match_count DESC, {order_by} {'DESC' if desc else 'ASC'} LIMIT ? OFFSET ?"
+            else:
+                base_query = "SELECT * FROM folders"
+                order_clause = f" ORDER BY {order_by} {'DESC' if desc else 'ASC'} LIMIT ? OFFSET ?"
+
+            if filters:
+                base_query += " WHERE " + " AND ".join(filters)
+
+            count_query = f"SELECT COUNT(*) FROM ({base_query})"
+            db.execute(count_query, params)
+            total_items = db.fetchone()[0]
+            total_pages = (total_items + page_size - 1) // page_size
+
+            if page < 1 or page > total_pages:
+                return {
+                    'folders': [],
+                    'result': {
+                        'page': page,
+                        'page_size': page_size,
+                        'total_pages': 0
+                    }
+                }
+
+            offset = (page - 1) * page_size
+            order_clause = f" ORDER BY {order_by} {'DESC' if desc else 'ASC'} LIMIT ? OFFSET ?"
+
+            final_query = base_query + order_clause
+            db.execute(final_query, params + [page_size, offset])
             folders = [dict(row) for row in db.fetchall()]
-            
-            result = []
+
+            result_folders = []
             for folder in folders:
                 folder_id = folder['id']
 
-                db.execute("SELECT * FROM folders WHERE id = ?", (folder_id,))
-                folder = db.fetchone()
-                
                 db.execute('''
                     SELECT f.id, f.name 
                     FROM files f
@@ -53,23 +82,35 @@ def fetchall_folders(
                 ''', (folder_id,))
                 files = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
 
-                tags = []
-                try:
-                    db.execute('''
-                        SELECT t.id, t.name 
-                        FROM tags t
-                        JOIN folder_tags ft ON t.id = ft.tag_id
-                        WHERE ft.folder_id = ?
-                    ''', (folder_id,))
-                    tags = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
-                except:
-                    pass
-            
-                result.append({**folder, 'files': files, 'tags': tags}) 
+                db.execute('''
+                    SELECT t.id, t.name 
+                    FROM tags t
+                    JOIN folder_tags ft ON t.id = ft.tag_id
+                    WHERE ft.folder_id = ?
+                ''', (folder_id,))
+                tags = [{'id': row[0], 'name': row[1]} for row in db.fetchall()]
 
-            return result
+                folder['files'] = files
+                folder['tags'] = tags
+                result_folders.append(folder)
+
+            return {
+                'folders': result_folders,
+                'result': {
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': total_pages,
+                }
+            }
         except:
-            return []
+            return {
+                'folders': [],
+                'result': {
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': 0
+                }
+            }
         
         
 
