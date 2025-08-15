@@ -1,17 +1,9 @@
-import sys, os, json, shutil, time, asyncio, random, pathlib
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QSizePolicy, QTabWidget,
-                             QCheckBox, QRadioButton, QButtonGroup, QPushButton, QTableWidget,
-                             QProgressBar, QSlider, QSpinBox, QTimeEdit, QDial, QFontComboBox, QLCDNumber,
-                             QFileDialog, QMessageBox, QComboBox, QMenu, QListWidget, QDialog, QListView,
-                             QVBoxLayout, QHBoxLayout, QGridLayout, QLayoutItem, QTableView,
-                             QLabel, QLineEdit, QTextEdit)
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandardItemModel
-from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel
+from PyQt6.QtWidgets import QWidget,QGridLayout, QTableView
 from PyQt6.QtSql import QSqlDatabase, QSqlTableModel, QSqlQuery
 
 from app.utils.sql_util import SQLITE_PATH
 
-class TestWidget(QWidget):
+class QTestWidget(QWidget):
     def __init__(self):
         super().__init__()
 

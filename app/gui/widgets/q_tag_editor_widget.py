@@ -12,7 +12,7 @@ from app.gui.templates.tag_template import TagTemplate
 from app.gui.widgets.flow_scroll_widget import FlowScrollWidget
 from app.repositories.tag_repository import fetchall_tags
 
-class TagEditorWidget(QWidget):
+class QTagEditorWidget(QWidget):
     def __init__(self):
         super().__init__()
 

@@ -1,8 +1,8 @@
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QMainWindow, QLabel
 from PyQt6.QtGui import QIcon, QFont
 
-from app.gui.widgets.central_widget import CentralWidget
-from app.gui.widgets.menu_widget import MenuWidget
+from app.gui.widgets.q_central_widget import QCentralWidget
+from app.gui.widgets.q_menu_bar_widget import QMenuBarWidget
 from app.utils.res_util import resource_path
 
 class MainWindow(QMainWindow):
@@ -11,12 +11,16 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle('Not my first application')
         self.setWindowIcon(QIcon(resource_path('app/resources/pic.png'))) 
-        self.setFont(QFont('monospace'))
-        self.setMinimumSize(300, 500)
+        self.setMinimumSize(800, 600)
+
+        tabs = QCentralWidget()
         
-        self.setMenuBar(MenuWidget())
+        self.setMenuBar(QMenuBarWidget(self, tabs))
+        self.setCentralWidget(tabs)
         # self.setMenuWidget()
-        self.setCentralWidget(CentralWidget())
         
-        # status = self.statusBar()
-        # status.showMessage('program has been started!', 3000)
+        status = self.statusBar()
+        status.showMessage('program has been started!', 3000)
+        # online_label = QLabel('🔌 online')
+        online_label = QLabel('Not my first application v0.1.9 by Mihail')
+        status.addPermanentWidget(online_label)

@@ -20,9 +20,9 @@ from app.repositories.tag_repository import fetchall_tags
 from app.gui.templates.flow_item_template import FlowItemTemplate
 from app.gui.templates.columns_item_template import ColumnsItemTemplate
 from app.gui.widgets.multi_list_widget import MultiListWidget
-from app.tests.test5_widget import PaginationWidget
+from app.gui.widgets.pagination_widget import PaginationWidget
 
-class Test2Widget(QWidget):
+class QPreviewWidget(QWidget):
     def __init__(self):
         super().__init__()
 

@@ -16,7 +16,7 @@ from app.gui.widgets.multi_list_widget import MultiListWidget
 from app.repositories.folder_repository import FolderRepository
 from app.repositories.tag_repository import fetchall_tags
 
-class Test3Widget(QWidget):
+class QCreatorWidget(QWidget):
     def __init__(self):
         super().__init__()
 
