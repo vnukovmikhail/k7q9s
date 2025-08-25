@@ -21,6 +21,5 @@ class MainWindow(QMainWindow):
         
         status = self.statusBar()
         status.showMessage('program has been started!', 3000)
-        # online_label = QLabel('🔌 online')
-        online_label = QLabel('Not my first application v0.1.9 by Mihail')
+        online_label = QLabel('Not my first application v0.1.9 by k7osx')
         status.addPermanentWidget(online_label)
