@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import QMenuBar, QWizard, QWizardPage, QVBoxLayout, QLabel
 
-from app.gui.widgets.q_central_widget import QCentralWidget
-
 from app.modules.q_file_menu import QFileMenu
 from app.modules.q_edit_menu import QEditMenu
 from app.modules.q_view_menu import QViewMenu
 from app.modules.q_help_menu import QHelpMenu
+
+from app.gui.widgets.q_central_widget import QCentralWidget
+from sqlalchemy.orm import Session
 
 class QMenuBarWidget(QMenuBar):
     def __init__(self, parent=None, tab_widget:QCentralWidget=None):

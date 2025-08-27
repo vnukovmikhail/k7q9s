@@ -11,20 +11,28 @@ from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QStandardItem, QStandard
 from PyQt6.QtCore import Qt, QSize, QSettings, QTimer, QEvent, QStringListModel, QPoint
 
 from app.gui.templates.multi_combobox_template import MultiComboBox
-from app.gui.widgets.file_drop_widget import FileDropWidget
 from app.gui.widgets.multi_list_widget import MultiListWidget
-from app.repositories.folder_repository import FolderRepository
-from app.repositories.tag_repository import fetchall_tags
+from app.gui.templates.q_flow_container_template import FlowContainerWidget
+
+from app.utils.fs_util import FolderManager
+from app.db.repositories.folder_repo import FolderRepo
+from app.db.repositories.tag_repo import TagRepo
+from app.db import session
 
 class QCreatorWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.file_paths = []
+
+        self.folder_repo = FolderRepo(session)
+        self.tag_repo = TagRepo(session)
+
         title_label = QLabel('Title:')
         title_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        title_input = QLineEdit()
-        title_input.setPlaceholderText('name_of_folder')
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText('name_of_folder')
 
         tags_label = QLabel('Tags:')
         tags_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
@@ -55,13 +63,13 @@ class QCreatorWidget(QWidget):
         radio_layout.addWidget(radio_info)
         radio_layout.addStretch()
 
-        radio_group = QButtonGroup(self)
-        radio_group.addButton(radio_copy, 0)
-        radio_group.addButton(radio_move, 1)
+        self.radio_group = QButtonGroup(self)
+        self.radio_group.addButton(radio_copy, 0)
+        self.radio_group.addButton(radio_move, 1)
 
         file_label = QLabel('File[s]:')
         file_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-        file_drop = FileDropWidget()
+        self.file_drop = FlowContainerWidget()
 
         file_drop_button = QPushButton('📁 select file[s] manually')
         file_drop_button.clicked.connect(self.select_files)
@@ -71,12 +79,12 @@ class QCreatorWidget(QWidget):
 
         layout = QGridLayout(self)
         layout.addWidget(title_label,           0, 0, 1, 1)
-        layout.addWidget(title_input,           0, 1, 1, 1)
+        layout.addWidget(self.title_input,      0, 1, 1, 1)
 
         layout.addWidget(tags_label,            1, 0, 1, 1)
         layout.addWidget(self.tags_list_widget, 1, 1, 1, 1)
 
-        layout.addWidget(file_drop,             2, 1, 1, 1)
+        layout.addWidget(self.file_drop,        2, 1, 1, 1)
         layout.addWidget(file_label,            2, 0, 1, 1)
 
         layout.addWidget(file_drop_button,      3, 1, 1, 1)
@@ -92,12 +100,11 @@ class QCreatorWidget(QWidget):
 
     def show_tooltip(self, widget:QWidget, text:str):
         position = widget.mapToGlobal(QPoint(0, int(widget.height() * 0.1)))
-        # position = widget.mapToGlobal(QPoint(0, -widget.height()))
         QToolTip.showText(position, text, widget)
 
     def fetch_tags(self):
         self.tags_list_widget.clear()
-        [self.tags_list_widget.addItem(tag['name'], tag['id']) for tag in fetchall_tags()]
+        [self.tags_list_widget.addItem(tag.name, tag.id) for tag in self.tag_repo.get_all_tags()]
 
     def select_files(self):
         self.file_paths, _ = QFileDialog.getOpenFileNames(
@@ -107,17 +114,18 @@ class QCreatorWidget(QWidget):
         )
 
     def approve_creation(self):
-        # title = self.input_fields['title'].text()
-        # tags = self.tags_combobox.value()
-        # file_paths = self.file_paths
-        # files = [os.path.basename(path) for path in file_paths]
-        # move = bool(self.radio_group.checkedId())
+        title = self.title_input.text()
+        tags = self.tags_list_widget.value()
+        file_paths = self.file_drop.files()
+        files = [os.path.basename(path) for path in file_paths]
+        move = bool(self.radio_group.checkedId())
 
-        # print(title, tags, file_paths, move)
-        return
-        fr = FolderRepository(title)
-        fr.add_files(file_paths, move)
-        fr.add_tags(tags)
+        fm = FolderManager(title)
+        fm.add_files(file_paths, move)
+
+        self.folder_repo.create_or_update_folder(fm.folder_name, tags, files)
+        
+        
 
     
         

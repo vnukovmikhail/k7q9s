@@ -39,14 +39,11 @@ class MultiListWidget(QWidget):
 
     def value(self):
         selected = []
-        selected_ids = []
         for i in range(self.list_widget.count()):
             item = self.list_widget.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 selected.append(item.text())
-                selected_ids.append(item.data(Qt.ItemDataRole.UserRole))
-        # self.clicked.emit()
-        return selected_ids
+        return selected
     
     def clear(self):
         self.list_widget.clear()

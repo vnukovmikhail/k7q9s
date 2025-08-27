@@ -3,6 +3,8 @@ from pathlib import Path
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtCore import Qt
 
+from app.db.models import FileModel
+
 from app.utils.fs_util import DEFAULT_PATH
 
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.svg'}
@@ -13,7 +15,7 @@ def elide_text(text, width, font):
 
 def full_paths(folder_name: str, files: list[dict[str]]) -> list[str]:
     return [
-        str(Path(DEFAULT_PATH, folder_name, file['name']).resolve())
+        str(Path(DEFAULT_PATH, folder_name, file.name).resolve())
         for file in files
     ]
 

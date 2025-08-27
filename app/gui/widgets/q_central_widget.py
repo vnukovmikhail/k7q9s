@@ -14,7 +14,6 @@ class QCentralWidget(QTabWidget):
     def create_tab(self, widget, name):
         self.addTab(widget, name)
         self.setCurrentIndex(self.count() - 1)
-        # print(self.count())
 
     def close_tab(self, index):
         self.removeTab(index)

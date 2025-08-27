@@ -13,8 +13,6 @@ from PyQt6.QtSql import QSqlDatabase, QSqlTableModel, QSqlQuery
 
 from app.gui.widgets.flow_scroll_widget import FlowScrollWidget
 from app.gui.templates.multi_combobox_template import MultiComboBox
-from app.repositories.folder_repository import fetchall_folders, VALID_ORDER_FIELDS
-from app.repositories.tag_repository import fetchall_tags
 
 # Types of templates
 from app.gui.templates.flow_item_template import FlowItemTemplate
@@ -22,9 +20,16 @@ from app.gui.templates.columns_item_template import ColumnsItemTemplate
 from app.gui.widgets.multi_list_widget import MultiListWidget
 from app.gui.widgets.pagination_widget import PaginationWidget
 
+from app.db.repositories.folder_repo import FolderRepo
+from app.db.repositories.tag_repo import TagRepo
+from app.db import session
+
 class QPreviewWidget(QWidget):
     def __init__(self):
         super().__init__()
+
+        self.folder_repo = FolderRepo(session)
+        self.tag_repo = TagRepo(session)
 
         MIN_VALUE = 50
         MAX_VALUE = 1000
@@ -81,7 +86,7 @@ class QPreviewWidget(QWidget):
         search_bar_layout.addWidget(search_button)
 
         self.order_by_combobox = QComboBox()
-        self.order_by_combobox.addItems(VALID_ORDER_FIELDS)
+        self.order_by_combobox.addItems(['id', 'name', 'created_at', 'updated_at'])
 
         radio_desc = QRadioButton('desc')
         radio_asc = QRadioButton('asc')
@@ -114,7 +119,7 @@ class QPreviewWidget(QWidget):
         layout.addLayout(edit_layout,       2, 1, 1, 2)
 
         self.list_widget.clicked.connect(self.fetch_folders)
-        self.search_input.returnPressed.connect(self.fetch_folders)
+        self.search_input.textChanged.connect(lambda:self.fetch_folders())
         search_button.clicked.connect(lambda _:self.fetch_folders())
         self.radio_group.buttonClicked.connect(lambda _:self.fetch_folders())
         self.order_by_combobox.currentIndexChanged.connect(lambda _:self.fetch_folders())
@@ -130,29 +135,36 @@ class QPreviewWidget(QWidget):
 
     def fetch_tags(self):
         self.list_widget.clear()
-        [self.list_widget.addItem(tag['name'], tag['id']) for tag in fetchall_tags()]
+        [self.list_widget.addItem(tag.name, tag.id) for tag in self.tag_repo.get_all_tags()]
 
     def fetch_folders(self, page: int = 1, page_size: int = 20):
-        order_by = self.order_by_combobox.currentText()
-        desc = True if self.radio_group.checkedButton().text() == 'desc' else False
-        search_field = 'name'
-        search_value = self.search_input.text()
-        tag_ids = self.list_widget.value()
-
-        print(f"{order_by}_{desc}_'{search_value}'_{tag_ids}")
         self.flow_widget.clear()
         self.item_templates.clear()
 
-        result = fetchall_folders(order_by, desc, search_field, search_value, tag_ids, page, page_size)
-        # print(result['folders'])
+        order_by = self.order_by_combobox.currentText()
+        desc = True if self.radio_group.checkedButton().text() == 'desc' else False
+        search_value = self.search_input.text()
+        tag_names = self.list_widget.value()
 
-        self.pagination_widget.set(result['result']['total_pages'])
-        self.pagination_widget.set_page(page, False)
+        info = self.folder_repo.get_folders_with_pagination(
+            page=page,
+            per_page=page_size,
+            sort_field=order_by,
+            sort_order_desc=desc,
+            search_field='name',
+            search_value=search_value,
+            tags=tag_names
+        )
 
-        for folder in result['folders']:
-            item_template = FlowItemTemplate(folder)
+        for item in info['items']:
+            item_template = FlowItemTemplate(item)
             self.item_templates.append(item_template)
             self.flow_widget.addWidget(item_template)
+
+        print(info)
+
+        self.pagination_widget.set(info['total_pages'])
+        self.pagination_widget.set_page(page, False)
 
         self.img_size_change()
 

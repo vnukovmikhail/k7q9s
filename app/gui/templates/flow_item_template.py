@@ -11,8 +11,10 @@ class FlowItemTemplate(ItemTemplate):
         file_paths = full_paths(self.title, self.files)
         filtered_paths = image_filter(file_paths)
         self.pic_paths = filtered_paths[0] if filtered_paths else 'app/resources/pic.png'
-
+        
         self.pixmap = QPixmap(self.pic_paths)
+
+        # self.pixmap = QPixmap('app/resources/pic.png')
         
         self.pic_label = QLabel()
 

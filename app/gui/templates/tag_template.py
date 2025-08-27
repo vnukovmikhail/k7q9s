@@ -1,13 +1,14 @@
 from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QLabel, QStyle
-
-from app.repositories.tag_repository import TagRepository
+from PyQt6.QtCore import Qt, pyqtSignal
 
 class TagTemplate(QWidget):
+    deleted = pyqtSignal(str)
     def __init__(self, tag_name:str):
         super().__init__()
-        self.t = TagRepository(tag_name)
 
-        label = QLabel(self.t.tag_name)
+        self.name = tag_name
+
+        label = QLabel(self.name)
 
         button = QPushButton()
         icon = self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
@@ -28,7 +29,5 @@ class TagTemplate(QWidget):
             if flow_layout:
                 flow_layout.removeWidget(self)
                 self.setParent(None)
-
-                self.t.delete()
-
+                self.deleted.emit(self.name)
                 self.deleteLater()

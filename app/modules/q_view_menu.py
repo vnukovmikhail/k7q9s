@@ -5,7 +5,6 @@ from app.gui.widgets.q_central_widget import QCentralWidget
 from app.gui.widgets.q_preview_widget import QPreviewWidget
 from app.gui.widgets.q_creator_widget import QCreatorWidget
 from app.gui.widgets.q_tag_editor_widget import QTagEditorWidget
-from app.gui.widgets.q_test_widget import QTestWidget
 from app.gui.widgets.q_home_widget import QHomeWidget
 
 class QViewMenu(QMenu):
@@ -23,12 +22,6 @@ class QViewMenu(QMenu):
         tag_editor_action = QAction('Tag editor', self)
         tag_editor_action.triggered.connect(lambda:tab_widget.create_tab(QTagEditorWidget(), 'Tag editor'))
         self.addAction(tag_editor_action)
-
-        self.addSeparator()
-
-        test_action = QAction('Test', self)
-        test_action.triggered.connect(lambda:tab_widget.create_tab(QTestWidget(), 'Test'))
-        self.addAction(test_action)
 
         self.addSeparator()
 
